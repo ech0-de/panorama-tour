@@ -1,6 +1,6 @@
 {
   "name": "panorama-tour",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/panorama-tour.min.js",
   "description": "A JavaScript library to interactively navigate a set of interconnected panoramas.",
   "repository": "github:0x530302/panorama-tour",
