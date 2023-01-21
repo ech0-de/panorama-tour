@@ -1,6 +1,6 @@
-import { terser } from 'rollup-plugin-terser';
 import replace from '@rollup/plugin-replace';
-import babel from 'rollup-plugin-babel';
+import terser from '@rollup/plugin-terser';
+import babel from '@rollup/plugin-babel';
 import pkg from './package.json';
 import csso from 'csso';
 import fs from 'fs';
@@ -15,8 +15,16 @@ const config = {
         format: 'umd'
     }],
     plugins: [
-        replace({ __minifiedCSS__: JSON.stringify(css) }),
-        babel({ exclude: ['node_modules/**'] }),
+        replace({
+            preventAssignment: false,
+            values: {
+                __minifiedCSS__: JSON.stringify(css)
+            }
+        }),
+        babel({
+            exclude: ['node_modules/**'],
+            babelHelpers: 'bundled'
+        }),
         terser()
     ]
 };
