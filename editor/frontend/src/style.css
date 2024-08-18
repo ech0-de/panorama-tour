@@ -1,0 +1,325 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+.pnlm-compass {
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+}
+
+.pt-minimap {
+    position: absolute !important;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    background-color: rgba(0, 0, 0, 0.8);
+    transition: 0.5s;
+    z-index: 999;
+}
+
+.pt-debug {
+    cursor: pointer !important;
+    transition: 0ms !important;
+}
+
+@media (min-width: 768px) {
+    .pt-minimap {
+        top: auto;
+        right: auto;
+        left: 0;
+        bottom: 0;
+        width: 400px;
+        height: 250px;
+        opacity: 0.2;
+        background-color: rgba(0, 0, 0, 0.3);
+        transition: 0ms !important;
+    }
+
+    .pt-minimap.pt-debug {
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      height: 100vh;
+      width: 100vw;
+      background-color: rgba(0, 0, 0, 0.6);
+      opacity: 1;
+    }
+
+    .pt-levels:not(.pt-debug) {
+        top: calc(100vh - 250px);
+        transition: 0.1s;
+    }
+
+    .pt-minimap:hover {
+        background-color: rgba(0, 0, 0, 0.6);
+        opacity: 1;
+    }
+}
+
+.pt-minimap-inactive {
+    color: #888;
+    font-size: 14pt;
+}
+.pt-minimap-active {
+    color: #fff;
+    font-size: 14pt;
+}
+
+.pnlm-truenorth::after,.pnlm-north::after, .pnlm-east::after, .pnlm-south::after, .pnlm-west::after {
+    position: absolute;
+    top: -5vh;
+    background-color: rgba(var(--color), 0.5);
+    content: var(--content);
+    color:white;
+    font-weight: bold;
+    text-align: center;
+    transform: translateX(-50%);
+}
+
+.pnlm-xtruenorth::after, .pnlm-xnorth::after, .pnlm-xeast::after, .pnlm-xsouth::after, .pnlm-xwest::after {
+    position: absolute;
+    background-color: rgba(var(--color), 0.75);
+    border-radius: 50%;
+    width: 2em;
+    text-align: center;
+    line-height: 2em;
+    height: 2em;
+    content: var(--short);
+    color:white;
+    font-weight: bold;
+    text-align: center;
+    transform: translate(-50%, -50%);
+}
+
+.pnlm-stick {
+    --color: 255, 255, 255;
+    border: 2px solid rgba(var(--color), 0.5);
+    height: 2px;
+    width: 2px;
+    background-image: none;
+}
+
+.pnlm-xtruenorth, .pnlm-xnorth, .pnlm-xeast, .pnlm-xsouth, .pnlm-xwest {
+    border: 2px solid transparent;
+    height: 2px;
+    width: 2px;
+    background-image: none;
+}
+.pnlm-struenorth, .pnlm-snorth, .pnlm-seast, .pnlm-ssouth, .pnlm-swest {
+    border: 2px solid rgb(var(--color));
+    height: 2px;
+    width: 2px;
+    background-image: none;
+}
+
+.pnlm-tick {
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    height: 5vh;
+    width: 0px;
+    background-image: none;
+}
+
+.pnlm-xtruenorth, .pnlm-struenorth {
+    --short: "TN";
+    --color: 255, 0, 0;
+}
+.pnlm-xnorth, .pnlm-snorth {
+    --short: "N";
+    --color: 255, 0, 0;
+}
+.pnlm-xeast, .pnlm-seast {
+    --short: "E";
+    --color: 255, 0, 255;
+}
+.pnlm-xsouth, .pnlm-ssouth {
+    --short: "S";
+    --color: 0, 0, 255;
+}
+.pnlm-xwest, .pnlm-swest {
+    --short: "W";
+    --color: 0, 255, 0;
+}
+
+#toolbar {
+  position: fixed;
+  bottom: 0px;
+  right: 0px;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  gap: .25em;
+  background-color: rgba(0, 0, 0, 0.3);
+  height: 105px;
+  align-items: end;
+}
+
+#toolbar > fieldset {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  margin-inline: .5em;
+  gap: .5em;
+  border: none;
+  padding: 0 0.5em;
+}
+
+#toolbar > fieldset:not(:has(button)) {
+  display: none;
+}
+
+#toolbar > fieldset > label {
+  position: absolute;
+  bottom: 0em;
+  border-left: 2px solid rgba(255, 255, 255, 0.6);
+  border-right: 2px solid rgba(255, 255, 255, 0.6);
+  border-top: 2px solid rgba(255, 255, 255, 0.6);
+  padding: .1em .5em;
+  height: 100px;
+  text-align: center;
+  font-size: 8pt;
+  width: 100%;
+}
+
+#toolbar button {
+  font-family: emoji;
+  position: relative;
+  font-size: 2em;
+  z-index: 99999;
+  background-color: rgba(255, 255, 255, 1);
+  width: 50px;
+  height: 50px;
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  border-radius: .25em;
+  cursor: pointer;
+  opacity: .4;
+  transition: 0.5s;
+  border: 1px solid #999;
+  border-color: rgba(0,0,0,0.4);
+  padding: 0;
+  display: grid;
+  align-items: center;
+  justify-content: center;
+}
+#toolbar button::after {
+  content: attr(aria-keyshortcuts);
+  position: absolute;
+  z-index: 99999;
+  left: 50%;
+  transform: translateX(-50%);
+  text-transform: uppercase;
+  margin-top: -6.3em;
+  font-family: monospace;
+  background-color: rgba(255, 255, 255, .7);
+  width: 2em;
+  height: 2em;
+  line-height: 2em;
+  border: 1px solid white;
+  color: #333;
+  font-weight: bold;
+  font-size: .5em;
+  border-radius: .25em;
+}
+
+#toolbar button:hover {
+    opacity: 1;
+}
+
+#toolbar button.active {
+    opacity: 1;
+}
+#toolbar button.negative {
+  filter: hue-rotate(150deg);
+}
+#toolbar button.negative::before {
+  content: "-";
+  position: absolute;
+  font-weight: bolder;
+  left: 12px;
+  top: 4px;
+  font-size: 75%;
+}
+
+.pt-legend {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 9999;
+  transform: translateX(-50%);
+
+  display: flex;
+  gap: 1em;
+}
+
+.pt-legend label {
+  --icon: " ";
+  display: flex;
+  align-items: baseline;
+  gap: .3em;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: .25em;
+  padding: 0em .25em;
+
+  white-space: nowrap;
+}
+
+.pt-legend label::before {
+  font-family: emoji;
+  content: var(--icon);
+  display: block;
+  background-color: var(--clr);
+  transform: translateY(.1em);
+  width: 1em;
+  height: 1em;
+  border-radius: .1em;
+}
+
+.pt-legend i.negative {
+  position: relative;
+}
+
+.pt-legend i.negative::before {
+  content: "-";
+  position: absolute;
+  font-weight: bolder;
+  left: 4px;
+  top: 2px;
+  font-size: 75%;
+}
