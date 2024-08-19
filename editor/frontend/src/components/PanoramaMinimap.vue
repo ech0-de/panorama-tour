@@ -70,6 +70,12 @@ onMounted(() => {
   renderedPolygons.addTo(minimap);
   renderedMarkers.addTo(minimap);
   renderedLevel.addTo(minimap);
+
+  minimap.addEventListener('contextmenu', (evt) => {
+    if (props.view === 'map' && evt.latlng) {
+      emit('action', { type: 'move', action: `${evt.latlng.lat}:${evt.latlng.lng}` });
+    }
+  });
 });
 
 watch(() => state.config?.map.zoom, (v) => {

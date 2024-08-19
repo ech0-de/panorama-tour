@@ -108,7 +108,7 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
       label: 'Delete Scene',
       emit: { type: 'scene', action: 'delete' }
     }, {
-      hotkey: 'd',
+      hotkey: '0',
       icon: '🌟',
       label: 'Jump to Default (⎇ Alt + d to make current scene default)',
       emit: { type: 'scene', action: 'default' },
@@ -155,12 +155,27 @@ function onClick(action: ToolbarAction, alt: boolean) {
   }
 }
 
+const keyAlternatives = {
+  ArrowRight: 'l',
+  ArrowUp: 'k',
+  ArrowDown: 'j',
+  ArrowLeft: 'h',
+  w: 'k',
+  s: 'j',
+  a: 'h',
+  d: 'l'
+};
+
 const listener = (evt: KeyboardEvent) => {
   if (evt.ctrlKey || props.editorActive) {
     return;
   }
 
-  const action = Object.values(actions.value).flat().find(e => e.hotkey === String(evt.key).toLowerCase());
+  let action = Object.values(actions.value).flat().find(e => e.hotkey === String(evt.key).toLowerCase());
+  if (!action && keyAlternatives[evt.key]) {
+    action = Object.values(actions.value).flat().find(e => e.hotkey === String(keyAlternatives[evt.key]).toLowerCase());
+  }
+
   if (action) {
     action.emit.alt = evt.altKey;
     emit('action', action.emit);

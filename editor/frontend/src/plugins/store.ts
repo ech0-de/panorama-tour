@@ -106,44 +106,52 @@ export const useEditorState = defineStore('state', {
       }
     },
 
-    moveScene(scene: string, direction: string) {
+    moveScene(scene: string, direction: string, alt: boolean) {
       if (this.config?.scenes[scene]) {
-        let heading = 0;
+        if (/^-?[0-9]*\.?[0-9]*:-?[0-9]*\.?[0-9]*$/.test(direction)) {
+          const coord = direction.split(':').map(e => Number(e));
+          if (coord.length === 2) {
+            this.config.scenes[scene].lat = coord[0];
+            this.config.scenes[scene].lon = coord[1];
+          }
+        } else {
+          let heading = 0;
 
-        switch (direction) {
-          case 'left':
-            heading = 270;
-            break;
-          case 'right':
-            heading = 90;
-            break;
-          case 'down':
-            heading = 180;
-            break;
+          switch (direction) {
+            case 'left':
+              heading = 270;
+              break;
+            case 'right':
+              heading = 90;
+              break;
+            case 'down':
+              heading = 180;
+              break;
+          }
+
+          const distance = alt ? 0.1 : 1;
+
+          const rad = Math.PI / 180;
+          const radInv = 180 / Math.PI;
+          const R = 6378137; // approximation of Earth's radius
+          const lon1 = this.config.scenes[scene].lon * rad;
+          const lat1 = this.config.scenes[scene].lat * rad;
+          const rheading = heading * rad;
+
+          const sinLat1 = Math.sin(lat1);
+          const cosLat1 = Math.cos(lat1);
+          const cosDistR = Math.cos(distance / R);
+          const sinDistR = Math.sin(distance / R);
+
+          let lat2 = Math.asin(sinLat1 * cosDistR + cosLat1 * sinDistR * Math.cos(rheading));
+          let lon2 = lon1 + Math.atan2(Math.sin(rheading) * sinDistR * cosLat1, cosDistR - sinLat1 * Math.sin(lat2));
+
+          lon2 = lon2 * radInv;
+          lon2 = lon2 > 180 ? lon2 - 360 : lon2 < -180 ? lon2 + 360 : lon2;
+
+          this.config.scenes[scene].lon = lon2;
+          this.config.scenes[scene].lat = lat2 * radInv;
         }
-
-        const distance = 1;
-
-        const rad = Math.PI / 180;
-        const radInv = 180 / Math.PI;
-        const R = 6378137; // approximation of Earth's radius
-        const lon1 = this.config.scenes[scene].lon * rad;
-        const lat1 = this.config.scenes[scene].lat * rad;
-        const rheading = heading * rad;
-
-        const sinLat1 = Math.sin(lat1);
-        const cosLat1 = Math.cos(lat1);
-        const cosDistR = Math.cos(distance / R);
-        const sinDistR = Math.sin(distance / R);
-
-        let lat2 = Math.asin(sinLat1 * cosDistR + cosLat1 * sinDistR * Math.cos(rheading));
-        let lon2 = lon1 + Math.atan2(Math.sin(rheading) * sinDistR * cosLat1, cosDistR - sinLat1 * Math.sin(lat2));
-
-        lon2 = lon2 * radInv;
-        lon2 = lon2 > 180 ? lon2 - 360 : lon2 < -180 ? lon2 + 360 : lon2;
-
-        this.config.scenes[scene].lon = lon2;
-        this.config.scenes[scene].lat = lat2 * radInv;
       }
     },
     moveSceneLevel(scene: string, newLevel: number) {

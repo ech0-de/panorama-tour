@@ -172,7 +172,8 @@ function handleAction(action: Action) {
       if (!isNaN(Number(action.action))) {
         if (action.alt) {
           state.moveSceneLevel(scene.value, Number(action.action));
-        } else {
+        }
+        if (action.action !== route.params.level) {
           router.push({ name: 'editor', params: { ...route.params, level: action.action } });
         }
       }
@@ -231,7 +232,7 @@ function handleAction(action: Action) {
       break;
 
     case 'move':
-      state.moveScene(scene.value, action.action);
+      state.moveScene(scene.value, action.action, action.alt || false);
       break;
 
     case 'shift':
