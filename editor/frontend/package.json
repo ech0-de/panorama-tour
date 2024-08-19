@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
+    "@fontsource/noto-color-emoji": "^5.0.27",
     "@types/dagre": "^0.7.52",
     "@types/geojson": "^7946.0.14",
     "@types/leaflet": "^1.9.12",

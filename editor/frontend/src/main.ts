@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import VNetworkGraph from 'v-network-graph';
+import '@fontsource/noto-color-emoji';
 
 import 'pannellum/build/pannellum.css';
 import 'v-network-graph/lib/style.css';
