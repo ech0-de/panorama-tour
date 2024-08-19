@@ -8,6 +8,7 @@ import { onMounted, onUnmounted, ref, watch, toRaw } from 'vue';
 import hash from 'object-hash';
 import 'pannellum';
 
+const r = (180/Math.PI);
 const container = ref<null | HTMLDivElement>(null);
 
 import { useEditorState } from '../plugins/store';
@@ -106,7 +107,7 @@ onMounted(() => {
               const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
               const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
               const theta = (Math.atan2(y, x) % (2 * Math.PI)) * 180 / Math.PI;
-              const bearing = (theta + (state.config?.default.north || 0) - (scene.northOffset || 0) + 360) % 360;
+              const bearing = (theta + (state.config?.default.north || 0) + (scene.northOffset || 0) + 360) % 360;
 
               return [{
                 pitch: -15 - 15 * Math.sign(state.config.scenes[props.scene].level - state.config.scenes[target].level),
@@ -129,7 +130,11 @@ onMounted(() => {
         scenes[id] = h;
 
         if (id === props.scene) {
-          viewer.loadScene(id, 0, scene.northOffset);
+          if (view?.pitch && view?.hfov) {
+            viewer.loadScene(id, view.pitch * r, view.yaw * r, view.hfov * r);
+          } else {
+            viewer.loadScene(id, 0, scene.northOffset);
+          }
         }
       }
     }
@@ -141,8 +146,7 @@ watch(() => props.scene, (scene) => {
     const oldNorthOffset = state.config?.scenes[viewer.getScene()]?.northOffset || 0;
     const newNorthOffset = state.config?.scenes[scene].northOffset || 0;
     if (view) {
-      const r = (180/Math.PI);
-      viewer.loadScene(scene, view.pitch * r, view.yaw * r + (oldNorthOffset - newNorthOffset), view.hfov * r || undefined);
+      viewer.loadScene(scene, view.pitch * r, view.yaw * r - (oldNorthOffset - newNorthOffset), view.hfov * r || undefined);
     } else {
       viewer.loadScene(scene, 0, newNorthOffset);
     }
