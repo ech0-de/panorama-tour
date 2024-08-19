@@ -1,11 +1,11 @@
 <template>
   <div id="debug-view">
     <div>
-      {{ currentlyConnected }} clients connected to {{ route.params.tour }}
+      {{ currentlyConnected }} client{{ currentlyConnected !== 1 ? 's' : '' }} connected to {{ route.params.tour }}
     </div>
     <div>
       <span :class="connectedToScene > 1 ? 'warning' : ''">
-        {{ connectedToScene }} clients connected to the current scene
+        {{ connectedToScene }} client{{ connectedToScene !== 1 ? 's' : '' }} connected to the current scene
       </span>
     </div>
   </div>
