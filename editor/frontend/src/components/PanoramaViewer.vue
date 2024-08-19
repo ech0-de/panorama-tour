@@ -138,11 +138,11 @@ onMounted(() => {
 
 watch(() => props.scene, (scene) => {
   if (state.config?.scenes[scene] && viewer && viewer.getScene() !== scene) {
-    const oldNorthOffset = state.config?.scenes[viewer.getScene()].northOffset || 0;
+    const oldNorthOffset = state.config?.scenes[viewer.getScene()]?.northOffset || 0;
     const newNorthOffset = state.config?.scenes[scene].northOffset || 0;
     if (view) {
       const r = (180/Math.PI);
-      viewer.loadScene(scene, view.pitch * r, view.yaw * r + (oldNorthOffset - newNorthOffset), view.hfov * r);
+      viewer.loadScene(scene, view.pitch * r, view.yaw * r + (oldNorthOffset - newNorthOffset), view.hfov * r || undefined);
     } else {
       viewer.loadScene(scene, 0, newNorthOffset);
     }
