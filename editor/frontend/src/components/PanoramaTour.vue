@@ -286,6 +286,7 @@ function handleAction(action: Action) {
                 }
               } catch {
                 // cancel edit
+                break;
               }
             }
           })();
