@@ -109,7 +109,7 @@ onMounted(() => {
               const bearing = (theta + (state.config?.default.north || 0) - (scene.northOffset || 0) + 360) % 360;
 
               return [{
-                pitch: -15,
+                pitch: -15 - 15 * Math.sign(state.config.scenes[props.scene].level - state.config.scenes[target].level),
                 yaw: bearing,
                 type: 'scene',
                 text: state.config.scenes[target].title || '',
