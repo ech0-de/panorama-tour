@@ -155,15 +155,15 @@ function onClick(action: ToolbarAction, alt: boolean) {
   }
 }
 
-const keyAlternatives = {
-  ArrowRight: 'l',
-  ArrowUp: 'k',
-  ArrowDown: 'j',
-  ArrowLeft: 'h',
-  w: 'k',
-  s: 'j',
-  a: 'h',
-  d: 'l'
+const keyAlternatives: {[key: string]: string} = {
+  'ArrowLeft': 'h',
+  'ArrowDown': 'j',
+  'ArrowUp': 'k',
+  'ArrowRight': 'l',
+  'a': 'h',
+  's': 'j',
+  'w': 'k',
+  'd': 'l'
 };
 
 const listener = (evt: KeyboardEvent) => {
