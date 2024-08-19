@@ -5,11 +5,9 @@ import { EditorState } from '../util/types.ts';
 
 export const useEditorState = defineStore('state', {
   state: (): EditorState => ({
+    presence: {},
     config: null
   }),
-
-  getters: {
-  },
 
   actions: {
     loadMap(data: any) {

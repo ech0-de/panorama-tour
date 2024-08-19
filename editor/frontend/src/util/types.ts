@@ -42,6 +42,7 @@ export type Config = {
 };
 
 export interface EditorState {
+  presence: {[key: string]: string},
   config: null | Config
 };
 

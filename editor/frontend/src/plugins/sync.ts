@@ -1,11 +1,11 @@
 import { applyPatch, compare } from 'fast-json-patch';
 import { debounce } from 'ts-debounce';
 import { createPinia } from 'pinia';
-import { toRaw } from 'vue';
+import { watch, toRaw } from 'vue';
 
 const pinia = createPinia();
 
-pinia.use(({ store }) => {
+pinia.use(({ store, app }) => {
   const queue = [] as any[];
   let socket = null as (null | WebSocket);
   let retransmitTimeout = 100;
@@ -55,12 +55,23 @@ pinia.use(({ store }) => {
           const msg = JSON.parse(e.data);
           switch (msg.type) {
             case 'snapshot': {
-              store.$patch({ config: msg.data });
+              store.$patch({ config: msg.data, presence: msg.presence });
               break;
             }
 
             case 'update': {
               store.$patch((state) => applyPatch(state.config, msg.data));
+              break;
+            }
+
+            case 'presence': {
+              store.$patch((state) => {
+                if (msg.scene) {
+                  state.presence[msg.id] = msg.scene;
+                } else {
+                  delete state.presence[msg.id];
+                }
+              });
               break;
             }
           }
@@ -103,8 +114,13 @@ pinia.use(({ store }) => {
     previousState = clone;
   }, 250);
 
+  watch(() => app?.config?.globalProperties?.$route, (route) => {
+    console.log('blubb', route?.params.scene);
+    queue.push({ presence: route?.params.scene });
+    sendQueue();
+  });
+
   store.$subscribe((evt) => debouncedSubscription(evt));
 });
-
 
 export default pinia;

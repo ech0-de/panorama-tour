@@ -1,5 +1,14 @@
 <template>
-  <pre id="debug-view" v-html="debug"></pre>
+  <div id="debug-view">
+    <div>
+      {{ currentlyConnected }} clients connected to {{ route.params.tour }}
+    </div>
+    <div>
+      <span :class="connectedToScene > 1 ? 'warning' : ''">
+        {{ connectedToScene }} clients connected to the current scene
+      </span>
+    </div>
+  </div>
   <template v-if="state?.config">
     <panorama-editor ref="editor" v-model="editorActive" />
     <panorama-viewer :scene="scene" @action="handleAction" />
@@ -34,15 +43,11 @@ const route = useRoute();
 
 const state = useEditorState();
 
-const debug = computed<string>(() => [
-  ['tour', route.params.tour],
-  ['level', level.value],
-  ['scene', scene.value],
-  ['view', view.value]
-].map(e => `<b>${String(e[0]).padStart(6, ' ')}:</b> ${e[1]}`).join('\n'))
-
 const editorActive = ref<boolean>(false);
 const editor = ref<null|InstanceType<typeof PanoramaEditor>>(null);
+
+const connectedToScene = computed(() => Object.values(state.presence).filter(e => e === scene.value).length);
+const currentlyConnected = computed(() => Object.values(state.presence).length);
 
 const level = computed<number>(() => Number(route.params.level) || 0);
 const scene = computed<string>(() => (Array.isArray(route.params.scene) ? route.params.scene[0] : route.params.scene) || '');
@@ -305,12 +310,13 @@ function handleAction(action: Action) {
   #debug-view {
     text-align: left;
     position: fixed;
-    top: 0;
+    top: 2em;
     left: 0;
     background-color: rgba(0,0,0,0.8);
     color:white;
     z-index:99999;
     padding: .25em .5em;
+    font-family: monospace;
   }
 
   #dragindicator {
@@ -351,5 +357,14 @@ function handleAction(action: Action) {
     font-family: emoji;
     font-size: larger;
     transform: translateY(-.1em);
+  }
+  #debug-view .warning::before {
+    content: "⚠️";
+    padding-right: .25em;
+  }
+  #debug-view .warning {
+    border-radius: .25em;
+    padding: .25em .8em .5em .5em;
+    background-color: rgba(255, 152, 0, 0.3);
   }
 </style>

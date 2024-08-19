@@ -8,6 +8,7 @@ import jsonpatch from 'fast-json-patch';
 import asyncHandler from 'express-async-handler';
 
 import { WebSocketServer } from 'ws';
+import { v4 as uuidv4 } from 'uuid';
 import * as turf from '@turf/turf';
 
 const PORT = process.env.PORT !== undefined ? parseInt(process.env.PORT) : 3030;
@@ -60,7 +61,7 @@ try {
         const name = file.name.slice(0, -5);
         tours.set(name, {
           name: name,
-          clients: new Set(),
+          clients: new Map(),
           state: snapshot
         });
       } catch {
@@ -153,6 +154,13 @@ app.post('/tours/:tour', express.raw({ limit: '10mb', type: 'image/jpeg' }), asy
 const server = app.listen(PORT, () => console.log(`Server started: http://localhost:${PORT}`));
 const wss = new WebSocketServer({ server: server });
 
+function broadcastPresenceUpdate(tour, { id, scene }) {
+  const msg = JSON.stringify({ type: 'presence', id: id, scene: scene });
+  for (const client of tour.clients.keys()) {
+    client.send(msg);
+  }
+}
+
 wss.on('connection', (ws, req) => {
   if (req.url.startsWith('/tours/') && req.url.length > 8) {
     const name = req.url.split('/')[2].replace(/[^a-zA-Z0-9-]/g, '');
@@ -161,7 +169,7 @@ wss.on('connection', (ws, req) => {
     if (!tour) {
       tour = {
         name: name,
-        clients: new Set(),
+        clients: new Map(),
         state: DEFAULT_CONFIG
       };
 
@@ -169,9 +177,18 @@ wss.on('connection', (ws, req) => {
       persistTour(tour);
     }
 
-    tour.clients.add(ws);
+    const presence = {
+      id: uuidv4(),
+      scene: tour.state?.default?.scene
+    };
 
-    ws.send(JSON.stringify({ type: 'snapshot', data: tour.state }));
+    broadcastPresenceUpdate(tour, presence);
+    tour.clients.set(ws, presence);
+    ws.send(JSON.stringify({
+      type: 'snapshot',
+      data: tour.state,
+      presence: Object.fromEntries([...tour.clients.values()].map(e => [e.id, e.scene]))
+    }));
 
     ws.on('message', (data) => {
       const msg = data.toString();
@@ -180,15 +197,20 @@ wss.on('connection', (ws, req) => {
       switch (parsed.type) {
         case 'update':
           try {
-            jsonpatch.applyPatch(tour.state, parsed.data);
-            // distribute to all but sender
-            for (const client of tour.clients) {
-              if (client !== ws) {
-                client.send(msg);
+            if (parsed.data?.presence) {
+              presence.scene = parsed.data?.presence;
+              broadcastPresenceUpdate(tour, presence);
+            } else {
+              jsonpatch.applyPatch(tour.state, parsed.data);
+              // distribute to all but sender
+              for (const client of tour.clients.keys()) {
+                if (client !== ws) {
+                  client.send(msg);
+                }
               }
-            }
 
-            persistTour(tour);
+              persistTour(tour);
+            }
           } catch (e) {
             console.log(`[${name}] error:`, e);
           }
@@ -196,7 +218,11 @@ wss.on('connection', (ws, req) => {
       }
     });
 
-    ws.on('close', () => tour.clients.delete(ws));
+    ws.on('close', () => {
+      presence.scene = null;
+      tour.clients.delete(ws);
+      broadcastPresenceUpdate(tour, presence);
+    });
     console.log(`[${name}] connected (${tour.clients.size} clients)`);
   }
 });
