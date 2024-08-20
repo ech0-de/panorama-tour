@@ -72,7 +72,7 @@ onMounted(() => {
   renderedLevel.addTo(minimap);
 
   minimap.addEventListener('contextmenu', (evt) => {
-    if (props.view === 'map' && evt.latlng) {
+    if (props.view === 'map' && evt.latlng && window.confirm('Do you really want to move the current scene?')) {
       emit('action', { type: 'move', action: `${evt.latlng.lat}:${evt.latlng.lng}` });
     }
   });
