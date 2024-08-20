@@ -231,7 +231,7 @@ function handleAction(action: Action) {
       break;
 
     case 'link':
-      if (state.config?.scenes?.[action.action] && state.config?.scenes?.[scene.value]) {
+      if (state.config?.scenes?.[action.action] && state.config?.scenes?.[scene.value] && action.action !== scene.value) {
         state.linkScene(scene.value, action.action);
       }
       break;
