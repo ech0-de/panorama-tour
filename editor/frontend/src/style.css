@@ -93,13 +93,15 @@ input, button, textarea, select {
     }
 }
 
-.pt-minimap-inactive {
-    color: #888;
-    font-size: 14pt;
-}
-.pt-minimap-active {
+.pt-minimap-icon, .pt-minimap-icon-hidden {
     color: #fff;
     font-size: 14pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.pt-minimap-icon-hidden {
+  opacity: .5;
 }
 
 .pnlm-truenorth::after,.pnlm-north::after, .pnlm-east::after, .pnlm-south::after, .pnlm-west::after {

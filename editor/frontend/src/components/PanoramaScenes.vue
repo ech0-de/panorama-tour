@@ -12,9 +12,9 @@
     </div>
     <v-network-graph :zoom-level="0.5" :nodes="nodes" :edges="edges" :layouts="layouts" :configs="configs" :event-handlers="eventHandlers" :selected-nodes="[props.scene]">
       <template #override-node="{ nodeId, scale, config, ...slotProps }">
-        <rect :x="config.width * scale * 1.30 * -0.5" :y="config.height * scale * 1.30 * -0.5" :rx="config.borderRadius" :ry="config.borderRadius" :width="config.width * scale * 1.30" :height="config.height* scale * 1.30" :stroke="config.strokeColor" :stroke-width="config.strokeWidth" :stroke-dasharray="config.strokeDasharray" v-if="config.strokeWidth" />
-        <rect :x="config.width * scale * -0.5" :y="config.height * scale * -0.5" :rx="config.borderRadius" :ry="config.borderRadius" :width="config.width * scale" :height="config.height* scale" :fill="config.color" v-bind="slotProps" :style="nodes[nodeId].style" />
-        <text font-family="emoji" :font-size="22 * scale" fill="#ffffff" text-anchor="middle" dominant-baseline="central" style="pointer-events: none" :style="nodeId === state.config?.default.scene ? '' : nodes[nodeId].style">
+        <rect :x="config.width * scale * 1.30 * -0.5" :y="config.height * scale * 1.30 * -0.5" :rx="config.borderRadius" :ry="config.borderRadius" :width="config.width * scale * 1.30" :height="config.height* scale * 1.30" :stroke="config.strokeColor" :stroke-width="config.strokeWidth" :stroke-dasharray="config.strokeDasharray" v-if="config.strokeWidth" :style="nodes[nodeId].hidden ? 'opacity: .5' : ''" />
+        <rect :x="config.width * scale * -0.5" :y="config.height * scale * -0.5" :rx="config.borderRadius" :ry="config.borderRadius" :width="config.width * scale" :height="config.height* scale" :fill="config.color" v-bind="slotProps" :style="`${nodes[nodeId].style}${nodes[nodeId].hidden ? 'opacity: .5' : ''}`" />
+        <text font-family="emoji" :font-size="22 * scale" fill="#ffffff" text-anchor="middle" dominant-baseline="central" style="pointer-events: none" :style="`${nodeId === state.config?.default.scene ? '' : nodes[nodeId].style}${nodes[nodeId].hidden ? 'opacity: .5' : ''}`">
           {{ nodes[nodeId].icon }}
         </text>
       </template>
@@ -72,7 +72,8 @@ const nodes = computed(() => {
       name: scene.title || id.slice(0, 8),
       style: levelMap[scene.level]?.style,
       icon: id === state.config?.default.scene ? '✨' : (levelMap[scene.level]?.icon || ''),
-      linked: currentRelations.has(id)
+      linked: currentRelations.has(id),
+      hidden: scene.hidden || false,
     }])
   );
 });
@@ -108,6 +109,7 @@ const configs = computed(() => defineConfigs({
       type: 'rect',
       color: '#0078d7',
       strokeColor: '#ff80ab',
+      strokeDasharray: (node) => node.hidden ? 10 : 0,
       strokeWidth: (node) => node.linked ? 4 : 0
     },
     label: {

@@ -195,6 +195,9 @@ function handleAction(action: Action) {
             state.renameScene(scene.value, newTitle);
           }
           break;
+        case 'hide':
+          state.hideScene(scene.value);
+          break;
         case 'default':
           if (!action.alt) {
             router.push({ name: 'editor', params: {

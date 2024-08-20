@@ -113,6 +113,11 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
       label: 'Jump to Default (⎇ Alt + d to make current scene default)',
       emit: { type: 'scene', action: 'default' },
       class: props.scene === state.config?.default.scene ? 'active' : '',
+    }, {
+      hotkey: 'p',
+      icon: state.config?.scenes?.[props.scene]?.hidden ? '📀' : '💿',
+      label: `${state.config?.scenes?.[props.scene]?.hidden ? 'Show' : 'Hide'} Scene when Exporting`,
+      emit: { type: 'scene', action: 'hide' }
     }],
     'Minimap Position': [{
       hotkey: 'h',

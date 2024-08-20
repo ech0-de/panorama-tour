@@ -206,6 +206,11 @@ export const useEditorState = defineStore('state', {
         this.config.default.scene = scene;
       }
     },
+    hideScene(scene: string) {
+      if (this.config?.scenes[scene]) {
+        this.config.scenes[scene].hidden = !this.config?.scenes[scene]?.hidden;
+      }
+    },
     setGlobalNorth(newNorth: number) {
       if (this.config?.default) {
         this.config.default.north = newNorth;

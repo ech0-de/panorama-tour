@@ -6,6 +6,7 @@ export type EditorView = 'scene' | 'linking' | 'map';
 export type SceneConfig = Pannellum.GeneralOptions & {
   relations: string[]
   panorama: string,
+  hidden?: boolean,
   level: number,
   lat: number,
   lon: number

@@ -3,6 +3,7 @@
     <label style="--icon: '👁'">current scene</label>
     <label style="--icon: '🔗'">linked scene</label>
     <label style="--icon: '📷'">unlinked scene</label>
+    <label style="--icon: '💿'">hidden scene</label>
     <label style="--icon: '🖯'">switch scene <small>(left click)</small></label>
     <label style="--icon: '🖰'">toggle link <small>(right click)</small></label>
   </div>
@@ -57,9 +58,10 @@ watch(() => props.view, (v) => {
   }, 50);
 }, { immediate: true });
 
-const LINKED_ICON = divIcon({ html: '🔗️', iconSize: [20, 20], className: 'pt-minimap-active' });
-const ACTIVE_ICON = divIcon({ html: '👁️', iconSize: [20, 20], className: 'pt-minimap-active' });
-const INACTIVE_ICON = divIcon({ html: '📷️', iconSize: [20, 20], className: 'pt-minimap-inactive' });
+const HIDDEN_ICON = divIcon({ html: '💿', iconSize: [20, 20], className: 'pt-minimap-icon-hidden' });
+const LINKED_ICON = divIcon({ html: '🔗️', iconSize: [20, 20], className: 'pt-minimap-icon' });
+const ACTIVE_ICON = divIcon({ html: '👁️', iconSize: [20, 20], className: 'pt-minimap-icon' });
+const INACTIVE_ICON = divIcon({ html: '📷️', iconSize: [20, 20], className: 'pt-minimap-icon' });
 
 onMounted(() => {
   if (!minimapContainer.value || !state.config?.map) {
@@ -172,6 +174,10 @@ watch(() => [state.config?.scenes, props.scene, props.level], () => {
       icon = ACTIVE_ICON;
     } else if ((scene.relations || []).includes(props.scene)) {
       icon = LINKED_ICON;
+    }
+
+    if (scene.hidden) {
+      icon = HIDDEN_ICON;
     }
 
     if (scene.relations) {
