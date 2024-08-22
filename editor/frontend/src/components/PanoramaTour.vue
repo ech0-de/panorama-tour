@@ -29,7 +29,7 @@
 import { computed, watch, ref, onMounted, onUnmounted, toRaw } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import { EditorView, Action } from '../util/types';
+import { EditorView, Action, Config } from '../util/types';
 
 import PanoramaToolbar from './PanoramaToolbar.vue';
 import PanoramaMinimap from './PanoramaMinimap.vue';
@@ -37,6 +37,7 @@ import PanoramaEditor from './PanoramaEditor.vue';
 import PanoramaViewer from './PanoramaViewer.vue';
 import PanoramaScenes from './PanoramaScenes.vue';
 import { useEditorState } from '../plugins/store';
+import doExport from '../util/export';
 
 const router = useRouter();
 const route = useRoute();
@@ -265,6 +266,9 @@ function handleAction(action: Action) {
           break;
         }
         case 'export':
+          if (state.config) {
+            doExport('', toRaw(state.config) as Config);
+          }
           break;
         case 'north':
           try {
