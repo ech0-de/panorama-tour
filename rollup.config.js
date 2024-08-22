@@ -1,30 +1,19 @@
-import replace from '@rollup/plugin-replace';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
-import babel from '@rollup/plugin-babel';
-import pkg from './package.json';
-import csso from 'csso';
-import fs from 'fs';
-
-const css = csso.minify(fs.readFileSync('src/main.css', 'utf-8')).css;
+import css from 'rollup-plugin-import-css';
 
 const config = {
-    input: 'src/main.js',
+    input: 'src/main.ts',
     output: [{
         name: 'panoramaTour',
-        file: pkg.main,
+        file: 'dist/panorama-tour.min.js',
         format: 'umd'
     }],
     plugins: [
-        replace({
-            preventAssignment: false,
-            values: {
-                __minifiedCSS__: JSON.stringify(css)
-            }
-        }),
-        babel({
-            exclude: ['node_modules/**'],
-            babelHelpers: 'bundled'
-        }),
+        nodeResolve(),
+        typescript({ include: 'src/*.ts' }),
+        css({ minify: true, output: 'panorama-tour.min.css' }),
         terser()
     ]
 };

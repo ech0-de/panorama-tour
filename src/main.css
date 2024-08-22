@@ -101,11 +101,10 @@
     }
 }
 
-.pt-minimap-inactive {
-    color: #888;
-    font-size: 14pt;
-}
-.pt-minimap-active {
+.pt-minimap-icon {
     color: #fff;
     font-size: 14pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
