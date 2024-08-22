@@ -73,17 +73,12 @@
     opacity: 0.8;
 }
 
-.pt-debug {
-    cursor: pointer !important;
-    transition: 0ms !important;
-}
-
 .pt-minimap.is-visible, .pt-levels.is-visible {
     display: block;
 }
 
 @media (min-width: 768px) {
-    .pt-minimap:not(.pt-debug) {
+    .pt-minimap {
         top: auto;
         right: auto;
         left: 0;
@@ -95,7 +90,7 @@
         transition: 0.5s;
     }
 
-    .pt-levels:not(.pt-debug) {
+    .pt-levels {
         top: calc(100vh - 250px);
         transition: 0.5s;
     }
