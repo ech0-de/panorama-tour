@@ -5,24 +5,6 @@ import './main.css';
 import 'pannellum';
 import 'leaflet';
 
-export type SceneConfig = Pannellum.GeneralOptions & {
-  relations: string[]
-  panorama: string,
-  hidden?: boolean,
-  marker?: L.Marker,
-  level: number,
-  lat: number,
-  lon: number
-};
-
-export type DefaultConfig = {
-  scene: string,
-  level: number,
-  north: number,
-  hfov?: number,
-  firstScene?: string,
-};
-
 export type BuildingNodeType = {
   type: 'node',
   id: string,
@@ -36,27 +18,48 @@ export type BuildingWayType = {
   tags: { [key: string]: any }
 };
 
-export type MapConfig = L.MapOptions & {
-  elements: (BuildingNodeType|BuildingWayType)[],
-  polygons: L.LatLngExpression[][]
-};
+const CAMERA_ICON = L.divIcon({ html: '📷️', iconSize: [20, 20], className: 'pt-minimap-icon' });
+const ACTIVE_ICON = L.divIcon({ html: '👁️', iconSize: [20, 20], className: 'pt-minimap-icon' });
 
 export type Config = {
-  scenes: {[type: string]: SceneConfig},
-  default: DefaultConfig,
-  map: MapConfig,
+  scenes: {[type: string]: {
+    relations: string[]
+    panorama: string,
+    hidden?: boolean,
+    marker?: L.Marker,
+    level: number,
+    lat: number,
+    lon: number
+  } & Pannellum.GeneralOptions},
+  default: {
+    scene: string,
+    level: number,
+    north: number,
+    hfov?: number,
+    autoLoad?: boolean,
+    firstScene?: string,
+    showZoomCtrl?: boolean,
+    showFullscreenCtrl?: boolean,
+  },
+  map: {
+    elements: (BuildingNodeType | BuildingWayType)[],
+    polygons: L.LatLngExpression[][]
+  } & L.MapOptions,
 };
 
 export default async function panoramaTour(element: HTMLElement, config: Config) {
   element.classList.add('pt-container');
 
   const storedScene = localStorage.getItem('scene');
-  const firstScene = config.default.firstScene || config.default.scene;
 
   if (!storedScene || !config.scenes[storedScene]) {
-    localStorage.setItem('scene', firstScene);
+    localStorage.setItem('scene', config.default.scene);
   }
-  config.default.firstScene = storedScene || firstScene;
+
+  config.default.autoLoad = true;
+  config.default.showZoomCtrl = false;
+  config.default.showFullscreenCtrl = false;
+  config.default.firstScene = storedScene || config.default.scene;
 
   if (window.innerWidth > 1200) {
     config.default.hfov = 120;
@@ -68,48 +71,85 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
     config.default.hfov = 50;
   }
 
+  let activeScene: string = '';
+  let loadingScene: string = config.default.firstScene;
   let activeLevel: null|number = null;
-  let activeScene: string = config.default.firstScene;
-  const viewer = window.pannellum.viewer(element, config.scenes[activeScene]);
+
+  for (const [id, scene] of Object.entries(config.scenes)) {
+    scene.title = scene.title || id;
+    console.log(scene.level);
+
+    if (Array.isArray(scene.relations)) {
+      scene.hotSpots = [];
+      for (const target of scene.relations) {
+        if (!config.scenes[target]) {
+          console.error('undefined scene', target);
+          break;
+        }
+
+        const lon1 = ((scene.lon % 360) * Math.PI) / 180;
+        const lat1 = ((scene.lat % 360) * Math.PI) / 180;
+        const lon2 = ((config.scenes[target].lon % 360) * Math.PI) / 180;
+        const lat2 = ((config.scenes[target].lat % 360) * Math.PI) / 180;
+
+        const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+        const theta = (Math.atan2(y, x) % (2 * Math.PI)) * 180 / Math.PI;
+        const bearing = (theta + (config?.default.north || 0) + (scene.northOffset || 0) + 360) % 360;
+
+        scene.hotSpots.push({
+          yaw: bearing,
+          type: 'scene',
+          sceneId: target,
+          text: config.scenes[target].title,
+          pitch: -15 - 15 * Math.sign(scene.level - config.scenes[target].level),
+          clickHandlerFunc: (evt: PointerEvent) => {
+            evt.stopPropagation();
+            switchScene(target);
+          }
+        });
+      }
+    }
+
+    scene.marker = L.marker([scene.lat, scene.lon], { icon: CAMERA_ICON });
+    scene.marker.on('click', () => switchScene(id));
+  }
+
+  const viewer = window.pannellum.viewer(element, config as any);
   const view = { pitch: 0, yaw: 0, hfov: 0 };
   const updateView = () => {
     view.pitch = viewer.getPitch();
     view.yaw = viewer.getYaw();
     view.hfov = viewer.getHfov();
   };
-  updateView();
-  const reloadView = () => {
-    viewer.loadScene(activeScene);
-    const b: null|HTMLButtonElement = document.querySelector('button.active');
-    if (b) {
-      b.click();
-    }
-  };
 
-  viewer.on('mouseup', updateView);
   viewer.on('touchend', updateView);
+  viewer.on('mouseup', updateView);
   viewer.on('load', () => {
-    let yawOffset = 0;
-    if (activeScene !== null) {
-      yawOffset = config.scenes[activeScene].northOffset || 0;
-    } else if (viewer.getScene()) {
-      yawOffset = 2 * (config.scenes[viewer.getScene()]?.northOffset || 0);
-    } else {
-      return;
-    }
+    activeScene = loadingScene;
+    localStorage.setItem('scene', activeScene);
 
-    activeScene = viewer.getScene();
-    yawOffset -= config.scenes[activeScene].northOffset || 0;
     if (config.scenes[activeScene].level !== activeLevel) {
       const btn: null|HTMLButtonElement = document.querySelector(`.pt-levels button[data-level="${config.scenes[activeScene].level}"]`);
       if (btn) {
-        btn.click();
+        btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
       }
     }
-    viewer.lookAt(view.pitch, view.yaw + yawOffset, view.hfov, false);
-    localStorage.setItem('scene', activeScene);
+
+    Object.values(config.scenes).forEach(e => e?.marker?.setIcon?.(CAMERA_ICON));
+    config.scenes[activeScene]?.marker?.setIcon?.(ACTIVE_ICON);
+
     updateView();
   });
+
+  const switchScene = (target: string) => {
+    if (target !== activeScene) {
+      const newNorthOffset = config.scenes[target]?.northOffset || 0;
+      const oldNorthOffset = config.scenes[activeScene]?.northOffset || 0;
+      loadingScene = target;
+      viewer.loadScene(target, view.pitch, view.yaw - (oldNorthOffset - newNorthOffset), view.hfov || undefined);
+    }
+  };
 
   const pnlmUI = element.querySelector('.pnlm-ui');
 
@@ -140,9 +180,6 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
   });
   pnlmUI.append(btn);
 
-  const cameraIcon = L.divIcon({ html: '📷️', iconSize: [20, 20], className: 'pt-minimap-icon' });
-  const activeIcon = L.divIcon({ html: '👁️', iconSize: [20, 20], className: 'pt-minimap-icon' });
-
   if (Array.isArray(config.map.elements)) {
     const nodes: {[key: string]: BuildingNodeType} = {};
     const elements = [];
@@ -162,8 +199,7 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
         continue;
       }
 
-      const p = L.polygon(e.nodes.map(id => ([nodes[id].lat, nodes[id].lon])), { color: 'white' })
-        .bindTooltip(e.tags.name, { permanent: true, direction: 'center', offset: [0.5, 0] });
+      const p = L.polygon(e.nodes.map(id => ([nodes[id].lat, nodes[id].lon])), { color: 'white' });
 
       if (/.*[^0-9\-].*/.test(e.tags['indoor:level'])) {
         building.add(p);
@@ -194,7 +230,7 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
           [
             ...building,
             ...levels.get(level),
-            ...Object.values(config.scenes).filter(e => !e.level || e.level === level).map(e => e.marker)
+            ...Object.values(config.scenes).filter(e => isNaN(e.level) || e.level === level).map(e => e.marker)
           ].forEach(e => e && rendered.addLayer(e));
         }
         levelSelector.appendChild(button);
@@ -206,52 +242,4 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
       L.polygon(p, { color: 'red' }).addTo(mapObj);
     }
   }
-
-  for (const [id, scene] of Object.entries(config.scenes)) {
-    scene.title = scene.title || id;
-
-    if (Array.isArray(scene.relations)) {
-      scene.hotSpots = [];
-      for (const target of scene.relations) {
-        if (!config.scenes[target]) {
-          console.error('undefined scene', target);
-          break;
-        }
-        const theta = Math.atan2(
-          scene.lat - config.scenes[target].lat,
-          scene.lon - config.scenes[target].lon
-        ) * -180 / Math.PI - (scene.northOffset || 0);
-
-        scene.hotSpots.push({
-          pitch: -15,
-          yaw: theta,
-          type: 'scene',
-          text: config.scenes[target].title,
-          sceneId: id
-        });
-      }
-    }
-
-    scene.marker = L.marker([scene.lat, scene.lon], { icon: cameraIcon })
-      .on('click', () => viewer.loadScene(id));
-  }
-
-  viewer.on('load', () => {
-    if (!activeScene) {
-      return;
-    }
-
-    Object.values(config.scenes).forEach(e => e?.marker?.setIcon?.(cameraIcon));
-    config.scenes[activeScene]?.marker?.setIcon?.(activeIcon);
-  });
-
-  setTimeout(() => {
-    btn.click();
-
-    const firstLevel: null|HTMLButtonElement = document.querySelector('.pt-levels button');
-    if (firstLevel) {
-      firstLevel.click();
-    }
-    reloadView();
-  }, 100);
 };

@@ -23,6 +23,7 @@
     position: absolute;
     right: 4px;
     bottom: 58px;
+    z-index: 99999;
 }
 
 .pt-minimap-btn:hover {
@@ -35,7 +36,7 @@
     left: 0px;
     right: 0px;
     width: 100vw;
-    height: 100vw;
+    height: 100vh;
     display: none;
     background-color: rgba(0, 0, 0, 0.8);
     transition: 0.5s;
@@ -78,6 +79,10 @@
 }
 
 @media (min-width: 768px) {
+    .pt-minimap-btn {
+        display: none;
+    }
+
     .pt-minimap {
         top: auto;
         right: auto;
@@ -88,11 +93,13 @@
         opacity: 0.2;
         background-color: rgba(0, 0, 0, 0.3);
         transition: 0.5s;
+        display: block;
     }
 
     .pt-levels {
         top: calc(100vh - 250px);
         transition: 0.5s;
+        display: block;
     }
 
     .pt-minimap:hover {
