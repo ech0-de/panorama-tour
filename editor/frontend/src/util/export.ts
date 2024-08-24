@@ -4,7 +4,7 @@ import { saveAs } from 'file-saver';
 import panoramaTourJS from 'panorama-tour/dist/panorama-tour.min.js?raw';
 import panoramaTourCSS from 'panorama-tour/dist/panorama-tour.min.css?raw';
 
-import { Config } from './types';
+import { BuildingWayType, Config } from './types';
 
 const sleep = (t: number) => new Promise((resolve) => setTimeout(resolve, t));
 
@@ -19,7 +19,19 @@ async function digest(raw: string) {
 
 export default async function doExport(title: string, config: Config): Promise<void> {
   const zip = new JSZip();
+  const levelsWithScenes = new Set();
   const clonedConfig = structuredClone(config);
+
+  levelsWithScenes.add(0);
+  levelsWithScenes.add(1);
+
+  const elements = clonedConfig.map.elements.filter(e => e.type === 'way' && levelsWithScenes.has(e.tags['indoor:level'])) as BuildingWayType[];
+  const requiredNodes = new Set(elements.flatMap(e => e.nodes));
+
+  clonedConfig.map.elements = [
+    ...clonedConfig.map.elements.filter(e => e.type === 'node' && requiredNodes.has(e.id)),
+    ...elements
+  ];
 
   const jsHash = await digest(panoramaTourJS);
   zip.file(`assets/panorama-tour-${jsHash}.min.js`, panoramaTourJS);
@@ -38,7 +50,7 @@ export default async function doExport(title: string, config: Config): Promise<v
 
   for (const scene of Object.values(clonedConfig.scenes)) {
     scene.relations = scene.relations.filter(e => !hiddenScenes.has(e));
-    scene.northOffset = (scene.northOffset || 0) + (config.default?.north || 0);
+    levelsWithScenes.add(scene.level);
 
     const res = await fetch(scene.panorama)
     const blob = await res.arrayBuffer();

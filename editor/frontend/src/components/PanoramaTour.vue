@@ -23,6 +23,9 @@
       <span>drop panorama images here to add them to the tour!</span>
     </section>
   </div>
+  <div id="loading">
+    <progress />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -272,9 +275,17 @@ function handleAction(action: Action) {
           break;
         }
         case 'export':
-          if (state.config) {
-            doExport('', toRaw(state.config) as Config);
-          }
+          (async () => {
+            if (state.config) {
+              const title = window.prompt('Provide Title for Exported Tour');
+              const loading = document.getElementById('loading');
+              if (title && loading) {
+                loading.style.display = 'block';
+                await doExport(title, toRaw(state.config) as Config);
+                loading.style.display = 'none';
+              }
+            }
+          })();
           break;
         case 'north':
           try {
@@ -332,12 +343,20 @@ function handleAction(action: Action) {
     font-family: monospace;
   }
 
-  #dragindicator {
+  #dragindicator, #loading {
     position: fixed;
     background-color: rgba(200, 255, 255, 0.5);
     z-index: 99999;
     inset: 0;
     display: none;
+  }
+  #loading progress {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 10em;
+    height: 4em;
   }
   #dropzone {
     position: fixed;

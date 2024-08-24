@@ -35,7 +35,14 @@ export type Config = {
     scene: string,
     level: number,
     north: number,
+    pitch?: number,
     hfov?: number,
+    yaw?: number
+    view?: {
+      pitch: number,
+      hfov: number,
+      yaw: number
+    },
     autoLoad?: boolean,
     firstScene?: string,
     showZoomCtrl?: boolean,
@@ -61,6 +68,12 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
   config.default.showFullscreenCtrl = false;
   config.default.firstScene = storedScene || config.default.scene;
 
+  if (config.default.view) {
+    config.default.pitch = config.default.view.pitch;
+    config.default.hfov = config.default.view.hfov;
+    config.default.yaw = config.default.view.yaw;
+  }
+
   if (window.innerWidth > 1200) {
     config.default.hfov = 120;
   } else if (window.innerWidth > 768) {
@@ -71,13 +84,22 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
     config.default.hfov = 50;
   }
 
+  if (/^#[0-9a-fA-F]{40}\/[0-9]*\/[0-9]*\/[0-9]*/.test(location.hash)) {
+    const [scene, pitch, yaw, hfov ] = location.hash.slice(1).split('/');
+    if (config.scenes[scene]) {
+      config.default.firstScene = scene;
+    }
+    config.default.pitch = Number(pitch) - 90;
+    config.default.hfov = Number(hfov);
+    config.default.yaw = Number(yaw);
+  }
+
   let activeScene: string = '';
   let loadingScene: string = config.default.firstScene;
   let activeLevel: null|number = null;
 
   for (const [id, scene] of Object.entries(config.scenes)) {
     scene.title = scene.title || id;
-    console.log(scene.level);
 
     if (Array.isArray(scene.relations)) {
       scene.hotSpots = [];
@@ -118,11 +140,14 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
   const viewer = window.pannellum.viewer(element, config as any);
   const view = { pitch: 0, yaw: 0, hfov: 0 };
   const updateView = () => {
-    view.pitch = viewer.getPitch();
-    view.yaw = viewer.getYaw();
-    view.hfov = viewer.getHfov();
+    view.pitch = (viewer.getPitch() + 90) % 180;
+    view.hfov = (viewer.getHfov() + 360) % 360;
+    view.yaw = (viewer.getYaw() + 360) % 360;
+
+    window.location.replace(`#${activeScene}/${Math.round(view.pitch)}/${Math.round(view.yaw)}/${Math.round(view.hfov)}`);
   };
 
+  viewer.on('animatefinished', updateView);
   viewer.on('touchend', updateView);
   viewer.on('mouseup', updateView);
   viewer.on('load', () => {
@@ -147,7 +172,7 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
       const newNorthOffset = config.scenes[target]?.northOffset || 0;
       const oldNorthOffset = config.scenes[activeScene]?.northOffset || 0;
       loadingScene = target;
-      viewer.loadScene(target, view.pitch, view.yaw - (oldNorthOffset - newNorthOffset), view.hfov || undefined);
+      viewer.loadScene(target, view.pitch - 90, view.yaw - (oldNorthOffset - newNorthOffset), view.hfov || undefined);
     }
   };
 

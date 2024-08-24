@@ -94,11 +94,11 @@ input, button, textarea, select {
 }
 
 .pt-minimap-icon, .pt-minimap-icon-hidden {
-    color: #fff;
-    font-size: 14pt;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  color: #fff;
+  font-size: 14pt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .pt-minimap-icon-hidden {
   opacity: .5;
