@@ -133,11 +133,13 @@ onMounted(() => {
         if (id === props.scene) {
           if (view?.pitch && view?.hfov) {
             viewer.loadScene(id, view.pitch * r, view.yaw * r, view.hfov * r);
-          } else {
+          } else if (state.config?.default?.view) {
             const { pitch, yaw, hfov } = state.config.default.view;
             const currentNorthOffset = scene.northOffset || 0;
             const defaultNorthOffset = state.config.scenes[state.config.default.scene]?.northOffset || 0;
             viewer.loadScene(id, pitch, yaw - defaultNorthOffset + currentNorthOffset, hfov);
+          } else {
+            viewer.loadScene(id, 0, scene.northOffset || 0);
           }
         }
       }
@@ -151,10 +153,12 @@ watch(() => props.scene, (scene) => {
     const newNorthOffset = state.config?.scenes[scene].northOffset || 0;
     if (view && (view.yaw || view.hfov || view.pitch)) {
       viewer.loadScene(scene, view.pitch * r, view.yaw * r - (oldNorthOffset - newNorthOffset), view.hfov * r || undefined);
-    } else {
+    } else if (state.config?.default?.view) {
       const { pitch, yaw, hfov } = state.config.default.view;
       const defaultNorthOffset = state.config.scenes[state.config.default.scene]?.northOffset || 0;
       viewer.loadScene(scene, pitch, yaw - defaultNorthOffset + newNorthOffset, hfov);
+    } else {
+      viewer.loadScene(scene, 0, newNorthOffset);
     }
   }
 }, { immediate: true });
