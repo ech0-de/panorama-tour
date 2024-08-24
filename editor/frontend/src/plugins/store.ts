@@ -207,9 +207,10 @@ export const useEditorState = defineStore('state', {
         }
       }
     },
-    makeDefault(scene: string) {
+    makeDefault(scene: string, pitch: number, yaw: number, hfov: number) {
       if (this.config?.scenes[scene]) {
         this.config.default.scene = scene;
+        this.config.default.view = { pitch, yaw, hfov };
       }
     },
     hideScene(scene: string) {

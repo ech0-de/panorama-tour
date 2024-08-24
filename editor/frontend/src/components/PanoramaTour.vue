@@ -11,7 +11,7 @@
   </div>
   <template v-if="state?.config">
     <panorama-editor ref="editor" v-model="editorActive" />
-    <panorama-viewer :scene="scene" @action="handleAction" />
+    <panorama-viewer ref="viewer" :scene="scene" @action="handleAction" />
     <panorama-toolbar :level="level" :view="view" :scene="scene" :editor-active="editorActive" @action="handleAction" />
     <panorama-minimap :level="level" :view="view" :scene="scene" @action="handleAction" />
     <panorama-scenes :level="level" :view="view" :scene="scene" @action="handleAction" />
@@ -46,6 +46,7 @@ const state = useEditorState();
 
 const editorActive = ref<boolean>(false);
 const editor = ref<null|InstanceType<typeof PanoramaEditor>>(null);
+const viewer = ref<null|InstanceType<typeof PanoramaViewer>>(null);
 
 const connectedToScene = computed(() => Object.values(state.presence).filter(e => e === scene.value).length);
 const currentlyConnected = computed(() => Object.values(state.presence).length);
@@ -206,10 +207,11 @@ function handleAction(action: Action) {
               scene: state.config?.default.scene
             }});
           } else {
-            if (!state.config?.scenes?.[scene.value] || state.config?.default.scene === scene.value) {
+            if (!state.config?.scenes?.[scene.value] || !viewer.value) {
               return;
             }
-            state.makeDefault(scene.value);
+            const view = viewer.value.getView();
+            state.makeDefault(scene.value, view.pitch, view.yaw, view.hfov);
           }
           break;
         case 'delete':
@@ -282,7 +284,7 @@ function handleAction(action: Action) {
             }
           } catch (e: any) {
             window.alert(`Error: ${e?.message}`);
-            console.log(e);
+            console.error(e);
           }
           break;
         case 'load':
@@ -311,8 +313,8 @@ function handleAction(action: Action) {
       break;
 
     default:
-      console.log('unknown action', action);
       // do nothing
+      console.warn('unknown action', action);
   }
 }
 </script>

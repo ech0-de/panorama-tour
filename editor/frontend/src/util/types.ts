@@ -15,7 +15,12 @@ export type SceneConfig = Pannellum.GeneralOptions & {
 export type DefaultConfig = {
   scene: string,
   level: number,
-  north: number
+  north: number,
+  view: {
+    pitch: number,
+    hfov: number,
+    yaw: number
+  }
 };
 
 export type BuildingNodeType = {

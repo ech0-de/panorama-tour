@@ -27,7 +27,7 @@ pinia.use(({ store, app }) => {
       retransmitTimeout = 100;
     } catch (e) {
       // retry
-      console.log(e);
+      console.error(e);
       retransmitTimeout *= 2;
       setTimeout(sendQueue, retransmitTimeout);
     }
@@ -43,7 +43,7 @@ pinia.use(({ store, app }) => {
 
       const ws = new WebSocket(`${location.origin.replace('http', 'ws')}/tours/${tourId}`);
       ws.addEventListener('open', () => {
-        console.log('[ws] connected');
+        console.debug('[ws] connected');
         // reset timeout
         retransmitTimeout = 100;
         reconnectTimeout = 500;
@@ -81,7 +81,7 @@ pinia.use(({ store, app }) => {
       });
 
       ws.addEventListener('close', (e) => {
-        console.log('[ws] closed, attempt reconnect', e.reason);
+        console.debug('[ws] closed, attempt reconnect', e.reason);
         reconnectTimeout = reconnectTimeout * 2;
         setTimeout(() => connect(), reconnectTimeout);
       });
@@ -115,7 +115,6 @@ pinia.use(({ store, app }) => {
   }, 250);
 
   watch(() => app?.config?.globalProperties?.$route, (route) => {
-    console.log('blubb', route?.params.scene);
     queue.push({ presence: route?.params.scene });
     sendQueue();
   });

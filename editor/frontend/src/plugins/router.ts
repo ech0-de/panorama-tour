@@ -15,9 +15,19 @@ const routes = [{
   }
 }, {
   path: '/:tour/',
-  redirect: (to: any) => {
-    return { path: ['', to.params.tour, '0', 'default', 'scene'].join('/') };
-  }
+  redirect: (to: any) => ({
+    path: ['', to.params.tour, '0', 'default', 'scene'].join('/')
+  })
+}, {
+  path: '/:tour/:level/',
+  redirect: (to: any) => ({
+    path: ['', to.params.tour, to.params.level, 'default', 'scene'].join('/')
+  })
+}, {
+  path: '/:tour/:level/:scene/',
+  redirect: (to: any) => ({
+    path: ['', to.params.tour, to.params.level, to.params.scene, 'scene'].join('/')
+  })
 }, {
   name: 'editor',
   path: '/:tour/:level/:scene/:view',

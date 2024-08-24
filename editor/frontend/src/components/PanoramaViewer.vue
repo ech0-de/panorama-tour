@@ -111,7 +111,7 @@ onMounted(() => {
               const bearing = (theta + (state.config?.default.north || 0) + (scene.northOffset || 0) + 360) % 360;
 
               return [{
-                pitch: -15 - 15 * Math.sign(state.config.scenes[props.scene].level - state.config.scenes[target].level),
+                pitch: -15 - 15 * Math.sign((state.config.scenes[props.scene]?.level || 0) - (state.config.scenes[target]?.level || 0)),
                 yaw: bearing,
                 type: 'scene',
                 text: state.config.scenes[target].title || '',
@@ -134,7 +134,10 @@ onMounted(() => {
           if (view?.pitch && view?.hfov) {
             viewer.loadScene(id, view.pitch * r, view.yaw * r, view.hfov * r);
           } else {
-            viewer.loadScene(id, 0, scene.northOffset);
+            const { pitch, yaw, hfov } = state.config.default.view;
+            const currentNorthOffset = scene.northOffset || 0;
+            const defaultNorthOffset = state.config.scenes[state.config.default.scene]?.northOffset || 0;
+            viewer.loadScene(id, pitch, yaw - defaultNorthOffset + currentNorthOffset, hfov);
           }
         }
       }
@@ -146,10 +149,12 @@ watch(() => props.scene, (scene) => {
   if (state.config?.scenes[scene] && viewer && viewer.getScene() !== scene) {
     const oldNorthOffset = state.config?.scenes[viewer.getScene()]?.northOffset || 0;
     const newNorthOffset = state.config?.scenes[scene].northOffset || 0;
-    if (view) {
+    if (view && (view.yaw || view.hfov || view.pitch)) {
       viewer.loadScene(scene, view.pitch * r, view.yaw * r - (oldNorthOffset - newNorthOffset), view.hfov * r || undefined);
     } else {
-      viewer.loadScene(scene, 0, newNorthOffset);
+      const { pitch, yaw, hfov } = state.config.default.view;
+      const defaultNorthOffset = state.config.scenes[state.config.default.scene]?.northOffset || 0;
+      viewer.loadScene(scene, pitch, yaw - defaultNorthOffset + newNorthOffset, hfov);
     }
   }
 }, { immediate: true });
@@ -160,5 +165,15 @@ onUnmounted(() => {
     viewer = null;
   }
 });
+
+function getView(): { pitch: number, yaw: number, hfov: number } {
+  return {
+    pitch: view.pitch * r,
+    hfov: view.hfov * r,
+    yaw: view.yaw * r
+  };
+}
+
+defineExpose({ getView });
 
 </script>
