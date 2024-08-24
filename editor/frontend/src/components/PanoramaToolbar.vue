@@ -154,27 +154,27 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
     'Horizon': [{
       hotkey: 'u',
       icon: '↙️',
-      style: `filter: hue-rotate(150deg);`,
-      label: 'Tilt Horizon Left (⎇ Alt + . for fine tilting)',
-      emit: { type: 'tilt', action: 'left' }
-    }, {
-      hotkey: 'i',
-      icon: '↘️',
-      style: `filter: hue-rotate(150deg);`,
-      label: 'Tilt Horizon Right (⎇ Alt + , for fine tilting)',
-      emit: { type: 'tilt', action: 'right' }
-    }, {
-      hotkey: 'o',
-      icon: '↙️',
       style: `filter: hue-rotate(300deg);`,
       label: 'Pitch Horizon Left (⎇ Alt + . for fine pitching)',
       emit: { type: 'pitch', action: 'left' }
     }, {
-      hotkey: 'p',
+      hotkey: 'i',
       icon: '↘️',
       style: `filter: hue-rotate(300deg);`,
       label: 'Pitch Hirzon Right (⎇ Alt + , for fine pitching)',
       emit: { type: 'pitch', action: 'right' }
+    }, {
+      hotkey: 'o',
+      icon: '↙️',
+      style: `filter: hue-rotate(150deg);`,
+      label: 'Tilt Horizon Left (⎇ Alt + . for fine tilting)',
+      emit: { type: 'tilt', action: 'left' }
+    }, {
+      hotkey: 'p',
+      icon: '↘️',
+      style: `filter: hue-rotate(150deg);`,
+      label: 'Tilt Horizon Right (⎇ Alt + , for fine tilting)',
+      emit: { type: 'tilt', action: 'right' }
     }]
   };
 });

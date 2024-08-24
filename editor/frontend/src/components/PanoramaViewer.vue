@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch, toRaw } from 'vue';
+import Quaternion from 'quaternion';
 import hash from 'object-hash';
 import 'pannellum';
 
@@ -76,13 +77,22 @@ onMounted(() => {
           viewer.removeScene(id);
         }
 
+        const x = Quaternion.fromEulerLogical(
+          (scene.horizonPitch || 0)/r,
+          (scene.horizonRoll || 0)/r,
+          -(scene.northOffset || 0)/r,
+          'XYZ'
+        );
+
+        const y = x.toEuler('YXZ');
+
         viewer.addScene(id, {
           type: scene.type,
           title: scene.title,
           panorama: scene.panorama,
-          northOffset: scene.northOffset,
-          horizonRoll: scene.horizonRoll,
-          horizonPitch: scene.horizonPitch,
+          northOffset: (scene.northOffset || 0),
+          horizonRoll: y[0] * r,
+          horizonPitch: y[1] * r,
           hotSpots: [
             ...[{t: 'truenorth', y: (state.config?.default.north || 0)}, {t: 'north', y: 0}, {t: 'east', y: 90}, {t:'south', y: 180}, {t: 'west', y: 270}].flatMap(({t, y}) => Array(29).fill('').map((_, i) => ({
               pitch: i * 5 - 70,
