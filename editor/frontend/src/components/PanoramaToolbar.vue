@@ -151,6 +151,17 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
       label: 'Shift North Clockwise (⎇ Alt + > for fine shifting)',
       emit: { type: 'shift', action: 'clockwise' }
     }],
+    'Horizon': [{
+      hotkey: '.',
+      icon: '↙️',
+      label: 'Tilt Horizon Left (⎇ Alt + . for fine tilting)',
+      emit: { type: 'tilt', action: 'left' }
+    }, {
+      hotkey: ',',
+      icon: '↘️',
+      label: 'Tilt Hirzon Right (⎇ Alt + , for fine tilting)',
+      emit: { type: 'tilt', action: 'right' }
+    }]
   };
 });
 

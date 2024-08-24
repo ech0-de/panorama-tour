@@ -163,6 +163,12 @@ export const useEditorState = defineStore('state', {
         this.config.scenes[scene].northOffset = (this.config.scenes[scene].northOffset || 0) + amount;
       }
     },
+    tiltScene(scene: string, direction: string, alt: boolean) {
+      if (this.config?.scenes[scene]) {
+        const amount = (alt ? 1 : 5) * (direction === 'left' ? 1 : -1);
+        this.config.scenes[scene].horizonPitch = (this.config.scenes[scene].horizonPitch || 0) + amount;
+      }
+    },
     renameScene(scene: string, newTitle: string) {
       if (this.config?.scenes[scene]) {
         this.config.scenes[scene].title = newTitle;

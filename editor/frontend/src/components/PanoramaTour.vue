@@ -244,6 +244,10 @@ function handleAction(action: Action) {
       state.moveScene(scene.value, action.action, action.alt || false);
       break;
 
+    case 'tilt':
+      state.tiltScene(scene.value, action.action, action.alt || false);
+      break;
+
     case 'shift':
       state.shiftScene(scene.value, action.action, action.alt || false);
       break;
