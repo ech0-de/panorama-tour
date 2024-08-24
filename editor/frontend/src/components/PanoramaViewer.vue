@@ -81,6 +81,7 @@ onMounted(() => {
           title: scene.title,
           panorama: scene.panorama,
           northOffset: scene.northOffset,
+          horizonRoll: scene.horizonRoll,
           horizonPitch: scene.horizonPitch,
           hotSpots: [
             ...[{t: 'truenorth', y: (state.config?.default.north || 0)}, {t: 'north', y: 0}, {t: 'east', y: 90}, {t:'south', y: 180}, {t: 'west', y: 270}].flatMap(({t, y}) => Array(29).fill('').map((_, i) => ({

@@ -166,6 +166,12 @@ export const useEditorState = defineStore('state', {
     tiltScene(scene: string, direction: string, alt: boolean) {
       if (this.config?.scenes[scene]) {
         const amount = (alt ? 1 : 5) * (direction === 'left' ? 1 : -1);
+        this.config.scenes[scene].horizonRoll = (this.config.scenes[scene].horizonRoll || 0) + amount;
+      }
+    },
+    pitchScene(scene: string, direction: string, alt: boolean) {
+      if (this.config?.scenes[scene]) {
+        const amount = (alt ? 1 : 5) * (direction === 'right' ? 1 : -1);
         this.config.scenes[scene].horizonPitch = (this.config.scenes[scene].horizonPitch || 0) + amount;
       }
     },

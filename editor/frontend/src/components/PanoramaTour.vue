@@ -253,6 +253,10 @@ function handleAction(action: Action) {
       state.tiltScene(scene.value, action.action, action.alt || false);
       break;
 
+    case 'pitch':
+      state.pitchScene(scene.value, action.action, action.alt || false);
+      break;
+
     case 'shift':
       state.shiftScene(scene.value, action.action, action.alt || false);
       break;

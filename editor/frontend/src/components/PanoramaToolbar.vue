@@ -114,7 +114,7 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
       emit: { type: 'scene', action: 'default' },
       class: props.scene === state.config?.default.scene ? 'active' : '',
     }, {
-      hotkey: 'p',
+      hotkey: '.',
       icon: state.config?.scenes?.[props.scene]?.hidden ? '📀' : '💿',
       label: `${state.config?.scenes?.[props.scene]?.hidden ? 'Show' : 'Hide'} Scene when Exporting`,
       emit: { type: 'scene', action: 'hide' }
@@ -152,15 +152,29 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
       emit: { type: 'shift', action: 'clockwise' }
     }],
     'Horizon': [{
-      hotkey: '.',
+      hotkey: 'u',
       icon: '↙️',
+      style: `filter: hue-rotate(150deg);`,
       label: 'Tilt Horizon Left (⎇ Alt + . for fine tilting)',
       emit: { type: 'tilt', action: 'left' }
     }, {
-      hotkey: ',',
+      hotkey: 'i',
       icon: '↘️',
-      label: 'Tilt Hirzon Right (⎇ Alt + , for fine tilting)',
+      style: `filter: hue-rotate(150deg);`,
+      label: 'Tilt Horizon Right (⎇ Alt + , for fine tilting)',
       emit: { type: 'tilt', action: 'right' }
+    }, {
+      hotkey: 'o',
+      icon: '↙️',
+      style: `filter: hue-rotate(300deg);`,
+      label: 'Pitch Horizon Left (⎇ Alt + . for fine pitching)',
+      emit: { type: 'pitch', action: 'left' }
+    }, {
+      hotkey: 'p',
+      icon: '↘️',
+      style: `filter: hue-rotate(300deg);`,
+      label: 'Pitch Hirzon Right (⎇ Alt + , for fine pitching)',
+      emit: { type: 'pitch', action: 'right' }
     }]
   };
 });
