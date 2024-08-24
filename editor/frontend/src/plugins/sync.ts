@@ -107,7 +107,6 @@ pinia.use(({ store, app }) => {
       const changes = compare(previousState, clone);
       if (changes.length) {
         queue.push(changes);
-        sendQueue();
       }
     }
 
@@ -120,6 +119,18 @@ pinia.use(({ store, app }) => {
   });
 
   store.$subscribe((evt) => debouncedSubscription(evt));
+  store.$onAction(({ name, after }) => {
+    if (name === 'deleteScene') {
+      const before = structuredClone(toRaw(store.$state.config));
+      after(() => {
+        const after = structuredClone(toRaw(store.$state.config));
+        const changes = compare(before, after);
+        if (changes.length) {
+          queue.push(changes);
+        }
+      });
+    }
+  });
 });
 
 export default pinia;
