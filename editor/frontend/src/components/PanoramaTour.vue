@@ -201,7 +201,10 @@ function handleAction(action: Action) {
           }
           break;
         case 'hide':
-          state.hideScene(scene.value);
+          state.toggleSceneHidden(scene.value);
+          break;
+        case 'intermediate':
+          state.toggleSceneIntermediate(scene.value);
           break;
         case 'default':
           if (!action.alt) {

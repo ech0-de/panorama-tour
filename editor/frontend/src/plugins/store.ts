@@ -219,9 +219,14 @@ export const useEditorState = defineStore('state', {
         this.config.default.view = { pitch, yaw, hfov };
       }
     },
-    hideScene(scene: string) {
+    toggleSceneHidden(scene: string) {
       if (this.config?.scenes[scene]) {
         this.config.scenes[scene].hidden = !this.config?.scenes[scene]?.hidden;
+      }
+    },
+    toggleSceneIntermediate(scene: string) {
+      if (this.config?.scenes[scene]) {
+        this.config.scenes[scene].intermediate = !this.config?.scenes[scene]?.intermediate;
       }
     },
     setGlobalNorth(newNorth: number) {

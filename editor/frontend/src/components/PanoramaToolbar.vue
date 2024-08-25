@@ -2,7 +2,7 @@
   <div id="toolbar">
     <fieldset v-for="(group, label) in actions" :key="label">
       <label>{{ label }}</label>
-      <button v-for="(a, i) in group" :key="i" :aria-keyshortcuts="a.hotkey" @contextmenu.prevent="onClick(a, true)" @click="onClick(a, false)" :class="a.class" :title="a.label" :style="a.style">{{ a.icon }}</button>
+      <button v-for="(a, i) in group" :key="i" :aria-keyshortcuts="a.hotkey" @contextmenu.prevent="onClick(a, $event, true)" @click="onClick(a, $event, false)" :class="a.class" :title="a.label" :style="a.style">{{ a.icon }}</button>
     </fieldset>
   </div>
 </template>
@@ -114,6 +114,12 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
       emit: { type: 'scene', action: 'default' },
       class: props.scene === state.config?.default.scene ? 'active' : '',
     }, {
+      hotkey: '/',
+      icon: '🪜',
+      label: 'Toggle Intermediate Level Mode',
+      emit: { type: 'scene', action: 'intermediate' },
+      class: state.config?.scenes[props.scene]?.intermediate ? 'active' : '',
+    }, {
       hotkey: '.',
       icon: state.config?.scenes?.[props.scene]?.hidden ? '📀' : '💿',
       label: `${state.config?.scenes?.[props.scene]?.hidden ? 'Show' : 'Hide'} Scene when Exporting`,
@@ -179,7 +185,11 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
   };
 });
 
-function onClick(action: ToolbarAction, alt: boolean) {
+function onClick(action: ToolbarAction, evt: MouseEvent, alt: boolean) {
+  if (evt?.altKey) {
+    alt = true;
+  }
+
   if (action.emit) {
     emit('action', {...action.emit, alt: alt });
   }

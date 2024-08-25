@@ -111,18 +111,35 @@ onMounted(() => {
                 return [];
               }
 
+              const targetScene = state.config.scenes[target];
+
               const lon1 = ((scene.lon % 360) * Math.PI) / 180;
               const lat1 = ((scene.lat % 360) * Math.PI) / 180;
-              const lon2 = ((state.config.scenes[target].lon % 360) * Math.PI) / 180;
-              const lat2 = ((state.config.scenes[target].lat % 360) * Math.PI) / 180;
+              const lon2 = ((targetScene.lon % 360) * Math.PI) / 180;
+              const lat2 = ((targetScene.lat % 360) * Math.PI) / 180;
 
               const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
               const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
               const theta = (Math.atan2(y, x) % (2 * Math.PI)) * 180 / Math.PI;
               const bearing = (theta + (state.config?.default.north || 0) + (scene.northOffset || 0) + 360) % 360;
 
+              let otherLevel = (state.config.scenes[target]?.level || 0);
+              const currentLevel = (state.config.scenes[props.scene]?.level || 0);
+
+              if (targetScene.intermediate) {
+                const levels = new Set([
+                  targetScene.level,
+                  ...targetScene.relations.map(e => state.config?.scenes[e]?.level).filter(e => e !== null)
+                ]);
+                levels.delete(state.config.scenes[props.scene]?.level);
+                const x = [...levels.values()][0];
+                if (x) {
+                  otherLevel = x;
+                }
+              }
+
               return [{
-                pitch: -15 - 15 * Math.sign((state.config.scenes[props.scene]?.level || 0) - (state.config.scenes[target]?.level || 0)),
+                pitch: -15 - 15 * Math.sign(currentLevel - otherLevel),
                 yaw: bearing,
                 type: 'scene',
                 text: state.config.scenes[target].title || '',

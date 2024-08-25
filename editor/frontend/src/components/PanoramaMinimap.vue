@@ -215,7 +215,15 @@ watch(() => [state.config?.scenes, props.scene, props.level], () => {
         .on('contextmenu', () => emit('action', { type: 'link', action: id }));
     }
 
-    if (scene.level === props.level) {
+    if (scene.intermediate) {
+      const levels = new Set([
+        scene.level,
+        ...scene.relations.map(e => state.config?.scenes?.[e]?.level).filter(e => e !== null)
+      ]);
+      if (levels.has(props.level)) {
+        markers[id].addTo(renderedMarkers);
+      }
+    } else if (scene.level === props.level) {
       markers[id].addTo(renderedMarkers);
     }
   }

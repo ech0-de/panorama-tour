@@ -71,7 +71,9 @@ const nodes = computed(() => {
       id: id,
       name: scene.title || id.slice(0, 8),
       style: levelMap[scene.level]?.style,
-      icon: id === state.config?.default.scene ? '✨' : (levelMap[scene.level]?.icon || ''),
+      icon: id === state.config?.default.scene
+        ? '✨'
+        : (scene?.intermediate ? '🪜' : (levelMap[scene.level]?.icon || '')),
       linked: currentRelations.has(id),
       hidden: scene.hidden || false,
     }])
