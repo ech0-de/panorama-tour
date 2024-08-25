@@ -107,6 +107,7 @@ pinia.use(({ store, app }) => {
       const changes = compare(previousState, clone);
       if (changes.length) {
         queue.push(changes);
+        sendQueue();
       }
     }
 
