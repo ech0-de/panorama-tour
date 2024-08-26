@@ -291,7 +291,7 @@ function handleAction(action: Action) {
               const loading = document.getElementById('loading');
               if (title && loading) {
                 loading.style.display = 'block';
-                await doExport(title, toRaw(state.config) as Config);
+                await doExport(title, toRaw(state.config) as Config, action.alt || false);
                 loading.style.display = 'none';
               }
             }

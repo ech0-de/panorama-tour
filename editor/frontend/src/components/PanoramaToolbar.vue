@@ -89,7 +89,7 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
     }, {
       hotkey: 'e',
       icon: '📂',
-      label: 'Export Tour',
+      label: 'Export Tour (⎇ Alt + e to only export HTML)',
       emit: { type: 'global', action: 'export' }
     }, {
       hotkey: '+',

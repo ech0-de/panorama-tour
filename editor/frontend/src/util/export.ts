@@ -17,8 +17,10 @@ async function digest(raw: string) {
   return hex.slice(0, 8);
 }
 
-export default async function doExport(title: string, config: Config): Promise<void> {
-  const zip = new JSZip();
+export default async function doExport(title: string, config: Config, htmlOnly: boolean): Promise<void> {
+  const prefix = `pt-${title}`.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/--*/g, '-');
+
+  const zip = !htmlOnly ? new JSZip() : null;
   const levelsWithScenes = new Set();
   const clonedConfig = structuredClone(config);
 
@@ -34,10 +36,12 @@ export default async function doExport(title: string, config: Config): Promise<v
   ];
 
   const jsHash = await digest(panoramaTourJS);
-  zip.file(`assets/panorama-tour-${jsHash}.min.js`, panoramaTourJS);
-
   const cssHash = await digest(panoramaTourCSS);
-  zip.file(`assets/panorama-tour-${cssHash}.min.css`, panoramaTourCSS);
+
+  if (zip) {
+    zip.file(`${prefix}/assets/panorama-tour-${jsHash}.min.js`, panoramaTourJS);
+    zip.file(`${prefix}/assets/panorama-tour-${cssHash}.min.css`, panoramaTourCSS);
+  }
 
   const hiddenScenes = new Set(
     Object.keys(clonedConfig.scenes)
@@ -52,14 +56,15 @@ export default async function doExport(title: string, config: Config): Promise<v
     scene.relations = scene.relations.filter(e => !hiddenScenes.has(e));
     levelsWithScenes.add(scene.level);
 
-    const res = await fetch(scene.panorama)
-    const blob = await res.arrayBuffer();
-
     const file = `tour/${scene.panorama.split('/').pop()}`;
     scene.panorama = file;
-    zip.file(file, blob);
 
-    await sleep(250 * Math.random());
+    if (zip) {
+      const res = await fetch(scene.panorama)
+      const blob = await res.arrayBuffer();
+      zip.file(`${prefix}/${file}`, blob);
+      await sleep(250 * Math.random());
+    }
   }
 
   const html = `
@@ -85,8 +90,13 @@ export default async function doExport(title: string, config: Config): Promise<v
     .replace(/\s*$/gm, '')
     .replace(/\r?\n/g, '');
 
-  zip.file('index.html', minified);
+  if (zip) {
+    zip.file(`${prefix}/index.html`, minified);
 
-  const blob = await zip.generateAsync({ type: 'blob' });
-  saveAs(blob, `pt-${title.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/--*/g, '-')}.zip`);
+    const blob = await zip.generateAsync({ type: 'blob' });
+    saveAs(blob, `${prefix}.zip`);
+  } else {
+    const blob = new Blob([minified], { type: 'text/html' });
+    saveAs(blob, `${prefix}-index.html`);
+  }
 }
