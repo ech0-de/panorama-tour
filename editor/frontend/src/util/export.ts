@@ -41,6 +41,13 @@ export default async function doExport(title: string, config: Config, htmlOnly: 
   if (zip) {
     zip.file(`${prefix}/assets/panorama-tour-${jsHash}.min.js`, panoramaTourJS);
     zip.file(`${prefix}/assets/panorama-tour-${cssHash}.min.css`, panoramaTourCSS);
+
+    // create mock leaflet assets to prevent 404 errors
+    [ 'layers', 'layers-2x', 'marker-icon', 'marker-icon-2x', 'marker-shadow' ].forEach(f => zip.file(
+      `${prefix}/assets/images/${f}.png`,
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      { base64: true }
+    ));
   }
 
   const hiddenScenes = new Set(
