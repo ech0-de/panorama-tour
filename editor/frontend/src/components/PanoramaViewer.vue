@@ -85,14 +85,27 @@ onMounted(() => {
         );
 
         const y = x.toEuler('YXZ');
+        const horizonRoll = y[0] * r;
+        const horizonPitch = y[1] * r;
+
+        const sceneLevels: Set<number> = new Set();
+        if (scene.level || scene.level === 0) {
+          sceneLevels.add(scene.level);
+        }
+        if (scene.intermediate) {
+          scene.relations
+            .map(e => state.config?.scenes[e]?.level)
+            .filter(e => e || e === 0)
+            .forEach(e => sceneLevels.add(e as number));
+        }
 
         viewer.addScene(id, {
           type: scene.type,
           title: scene.title,
           panorama: scene.panorama,
           northOffset: (scene.northOffset || 0),
-          horizonRoll: y[0] * r,
-          horizonPitch: y[1] * r,
+          horizonRoll: horizonRoll,
+          horizonPitch: horizonPitch,
           hotSpots: [
             ...[{t: 'truenorth', y: (state.config?.default.north || 0)}, {t: 'north', y: 0}, {t: 'east', y: 90}, {t:'south', y: 180}, {t: 'west', y: 270}].flatMap(({t, y}) => Array(29).fill('').map((_, i) => ({
               pitch: i * 5 - 70,
@@ -123,7 +136,6 @@ onMounted(() => {
               const theta = (Math.atan2(y, x) % (2 * Math.PI)) * 180 / Math.PI;
               const bearing = (theta + (state.config?.default.north || 0) + (scene.northOffset || 0) + 360) % 360;
 
-              const currentLevel = (scene?.level || 0);
               let otherLevel = (state.config.scenes[target]?.level || 0);
 
               if (targetScene.intermediate) {
@@ -138,10 +150,13 @@ onMounted(() => {
                 }
               }
 
+              const currentLevel = [...sceneLevels].filter(e => e !== otherLevel)[0] ?? (scene?.level || 0);
+
               return [{
                 pitch: -15 - 15 * Math.sign(currentLevel - otherLevel),
                 yaw: bearing,
                 type: 'scene',
+                cssClass: `pnlm-hotspot pnlm-sprite pnlm-scene ${Math.sign(currentLevel - otherLevel) > 0 ? 'pt-hs-flipped' : ''}`,
                 text: state.config.scenes[target].title || '',
                 sceneId: target,
                 sceneFadeDuration: 800,

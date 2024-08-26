@@ -25,7 +25,7 @@ export type Config = {
   scenes: {[type: string]: {
     relations: string[]
     panorama: string,
-    hidden?: boolean,
+    intermediate?: boolean,
     marker?: L.Marker,
     level: number,
     lat: number,
@@ -103,6 +103,18 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
 
     if (Array.isArray(scene.relations)) {
       scene.hotSpots = [];
+
+      const sceneLevels: Set<number> = new Set();
+      if (scene.level || scene.level === 0) {
+        sceneLevels.add(scene.level);
+      }
+      if (scene.intermediate) {
+        scene.relations
+          .map(e => config?.scenes[e]?.level)
+          .filter(e => e || e === 0)
+          .forEach(e => sceneLevels.add(e as number));
+      }
+
       for (const target of scene.relations) {
         if (!config.scenes[target]) {
           console.error('undefined scene', target);
@@ -121,12 +133,29 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
         const theta = (Math.atan2(y, x) % (2 * Math.PI)) * 180 / Math.PI;
         const bearing = (theta + (config?.default.north || 0) + (scene.northOffset || 0) + 360) % 360;
 
+        let otherLevel = (targetScene?.level || 0);
+
+        if (targetScene.intermediate) {
+          const levels = new Set([
+            targetScene.level,
+            ...targetScene.relations.map(e => config?.scenes[e]?.level).filter(e => e !== null)
+          ]);
+          levels.delete(scene?.level);
+          const x = [...levels.values()][0];
+          if (x) {
+            otherLevel = x;
+          }
+        }
+
+        const currentLevel = [...sceneLevels].filter(e => e !== otherLevel)[0] ?? (scene?.level || 0);
+
         scene.hotSpots.push({
           yaw: bearing,
-          type: 'scene',
+          type: `${Math.sign(currentLevel - otherLevel) ? 'scene' : 'info'}`,
+          cssClass: `pnlm-hotspot pnlm-sprite pnlm-scene ${Math.sign(currentLevel - otherLevel) > 0 ? 'pt-hs-flipped' : ''}`,
           sceneId: target,
           text: config.scenes[target].title,
-          pitch: -15 - 15 * Math.sign(scene.level - config.scenes[target].level),
+          pitch: -15 - 15 * Math.sign(currentLevel - otherLevel),
           clickHandlerFunc: (evt: PointerEvent) => {
             evt.stopPropagation();
             switchScene(target);
