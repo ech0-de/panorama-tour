@@ -8,6 +8,9 @@
         {{ connectedToScene }} client{{ connectedToScene !== 1 ? 's' : '' }} connected to the current scene
       </span>
     </div>
+    <div>&emsp;&emsp;northOffset:&nbsp; {{ state.config?.scenes[scene].northOffset  }}</div>
+    <div>&emsp;&emsp;horizonRoll:&nbsp; {{ state.config?.scenes[scene].horizonRoll  }}</div>
+    <div>&emsp;&emsp;horizonPitch: {{ state.config?.scenes[scene].horizonPitch  }}</div>
   </div>
   <template v-if="state?.config">
     <panorama-editor ref="editor" v-model="editorActive" />

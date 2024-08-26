@@ -106,13 +106,15 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
       for (const target of scene.relations) {
         if (!config.scenes[target]) {
           console.error('undefined scene', target);
-          break;
+          continue;
         }
+
+        const targetScene = config.scenes[target];
 
         const lon1 = ((scene.lon % 360) * Math.PI) / 180;
         const lat1 = ((scene.lat % 360) * Math.PI) / 180;
-        const lon2 = ((config.scenes[target].lon % 360) * Math.PI) / 180;
-        const lat2 = ((config.scenes[target].lat % 360) * Math.PI) / 180;
+        const lon2 = ((targetScene.lon % 360) * Math.PI) / 180;
+        const lat2 = ((targetScene.lat % 360) * Math.PI) / 180;
 
         const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
         const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
@@ -135,6 +137,35 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
 
     scene.marker = L.marker([scene.lat, scene.lon], { icon: CAMERA_ICON });
     scene.marker.on('click', () => switchScene(id));
+
+    // adjust horizonRoll and horizonPitch to rotate around north adjusted axis
+    // adapted from Robert Eisele's Quaternion.js
+    const [[cX, sX], [cY, sY], [cZ, sZ]] = [
+      -(scene.northOffset || 0),
+      (scene.horizonRoll || 0),
+      (scene.horizonPitch || 0)
+    ]
+      .map(a => a * (Math.PI / 360))
+      .map(a => [Math.cos(a), Math.sin(a)]);
+
+    const m = [
+      sX * sY * sZ + cX * cY * cZ,
+      sZ * cX * cY - sX * sY * cZ,
+      sX * sZ * cY + sY * cX * cZ,
+      sX * cY * cZ - sY * sZ * cX
+    ];
+
+    const t = 2 * (m[2] * m[3] - m[0] * m[1]);
+
+    if (t >= 1) {
+      scene.horizonPitch = -90;
+    } else if (t <= -1) {
+      scene.horizonPitch = 90;
+    } else {
+      scene.horizonPitch = -((180/Math.PI) * Math.asin(t));
+    }
+
+    scene.horizonRoll = (180/Math.PI) * Math.atan2(2 * (m[1] * m[3] + m[0] * m[2]), 1 - 2 * (m[1] * m[1] + m[2] * m[2]));
   }
 
   const viewer = window.pannellum.viewer(element, config as any);
