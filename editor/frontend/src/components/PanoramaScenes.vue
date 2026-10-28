@@ -144,34 +144,80 @@ const configs = computed(() => defineConfigs({
   }
 }));
 
+// sizes as rendered by v-network-graph: 32px rect (scaled by 1.3 for the link outline)
+// and a label with background below it
+const NODE_SIZE = 32 * 1.3;
+const LABEL_FONT_SIZE = 11;
+const LABEL_HEIGHT = LABEL_FONT_SIZE * 1.1 + 4;
+const LABEL_MARGIN = 7;
+
+const measureContext = document.createElement('canvas').getContext('2d');
+function labelWidth(text: string): number {
+  if (!measureContext) {
+    return text.length * LABEL_FONT_SIZE * 0.6;
+  }
+
+  measureContext.font = `${LABEL_FONT_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
+  return measureContext.measureText(text).width + 8;
+}
+
 const layouts = computed(() => {
   const res = { nodes: {} } as Layouts;
-  const nodeSize = 25;
 
-  if (Object.keys(nodes.value).length <= 1 || Object.keys(edges.value).length == 0) {
+  if (Object.keys(nodes.value).length <= 1) {
     return res;
   }
 
-  const g = new graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({
-    rankdir: 'LR',
-    nodesep: nodeSize * 2,
-    edgesep: nodeSize,
-    ranksep: nodeSize * 2,
-  });
+  // reserve space for node and label, so labels don't overlap neighbouring nodes
+  const boxWidth = (name: string) => Math.max(NODE_SIZE, labelWidth(name));
+  const boxHeight = NODE_SIZE + LABEL_MARGIN + LABEL_HEIGHT;
+  // boxes are centered, but the node itself sits above its label
+  const labelOffset = (LABEL_MARGIN + LABEL_HEIGHT) / 2;
 
-  Object.keys(nodes.value).forEach((id) => g.setNode(id, { width: nodeSize, height: nodeSize }));
-  Object.values(edges.value).forEach(edge => g.setEdge(edge.source, edge.target));
+  const validEdges = Object.values(edges.value).filter(e => nodes.value[e.source] && nodes.value[e.target]);
+  const linked = new Set(validEdges.flatMap(e => [e.source, e.target]));
+  const isolated = Object.values(nodes.value).filter(node => !linked.has(node.id));
 
-  layout(g);
+  let bottom = 0;
+  if (linked.size) {
+    const g = new graphlib.Graph();
+    g.setDefaultEdgeLabel(() => ({}));
+    g.setGraph({
+      rankdir: 'LR',
+      nodesep: NODE_SIZE * 0.5,
+      edgesep: NODE_SIZE * 0.5,
+      ranksep: NODE_SIZE * 1.5,
+    });
 
-  g.nodes().forEach((nodeId: string) => {
-    res.nodes[nodeId] = {
-      x: g.node(nodeId).x,
-      y: g.node(nodeId).y
-    };
-  })
+    linked.forEach((id) => g.setNode(id, { width: boxWidth(nodes.value[id].name), height: boxHeight }));
+    validEdges.forEach(edge => g.setEdge(edge.source, edge.target));
+
+    layout(g);
+
+    g.nodes().forEach((nodeId: string) => {
+      res.nodes[nodeId] = {
+        x: g.node(nodeId).x,
+        y: g.node(nodeId).y - labelOffset
+      };
+    });
+
+    bottom = (g.graph().height || 0) + NODE_SIZE;
+  }
+
+  // scenes without links (e.g. right after an import) go into a grid below the graph
+  // instead of one long dagre rank
+  if (isolated.length) {
+    const columns = Math.ceil(Math.sqrt(isolated.length * 2));
+    const cellWidth = Math.max(...isolated.map(node => boxWidth(node.name))) + NODE_SIZE * 0.5;
+    const cellHeight = boxHeight + NODE_SIZE * 0.5;
+
+    isolated.forEach((node, i) => {
+      res.nodes[node.id] = {
+        x: (i % columns + 0.5) * cellWidth,
+        y: bottom + (Math.floor(i / columns) + 0.5) * cellHeight - labelOffset
+      };
+    });
+  }
 
   return res;
 });
