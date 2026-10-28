@@ -33,6 +33,15 @@ function webpSupported(): Promise<boolean> {
   });
 }
 
+// localStorage throws if storage is blocked (e.g. some private browsing modes)
+function storage<T>(fn: () => T): T | null {
+  try {
+    return fn();
+  } catch {
+    return null;
+  }
+}
+
 export type Config = {
   scenes: {[type: string]: {
     relations: string[]
@@ -71,16 +80,15 @@ export type Config = {
 export default async function panoramaTour(element: HTMLElement, config: Config) {
   element.classList.add('pt-container');
 
-  const storedScene = localStorage.getItem('scene');
-
-  if (!storedScene || !config.scenes[storedScene]) {
-    localStorage.setItem('scene', config.default.scene);
-  }
+  // all tours on the same origin share one localStorage, so remember the scene per tour,
+  // and ignore stored scenes that don't exist (anymore), as pannellum fails to load those
+  const storageKey = `pt-scene:${location.pathname.replace(/index\.html$/, '')}`;
+  const storedScene = storage(() => localStorage.getItem(storageKey));
 
   config.default.autoLoad = true;
   config.default.showZoomCtrl = false;
   config.default.showFullscreenCtrl = false;
-  config.default.firstScene = storedScene || config.default.scene;
+  config.default.firstScene = storedScene && config.scenes[storedScene] ? storedScene : config.default.scene;
 
   if (config.default.view) {
     config.default.pitch = config.default.view.pitch;
@@ -239,7 +247,7 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
   viewer.on('mouseup', updateView);
   viewer.on('load', () => {
     activeScene = loadingScene;
-    localStorage.setItem('scene', activeScene);
+    storage(() => localStorage.setItem(storageKey, activeScene));
 
     if (config.scenes[activeScene].level !== activeLevel) {
       const btn: null|HTMLButtonElement = document.querySelector(`.pt-levels button[data-level="${config.scenes[activeScene].level}"]`);
