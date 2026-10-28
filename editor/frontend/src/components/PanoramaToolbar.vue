@@ -11,7 +11,7 @@
 import { onMounted, onUnmounted, computed } from 'vue';
 
 import { useEditorState } from '../plugins/store';
-import { Action, EditorView, NUMBER_EMOJI } from '../util/types';
+import { Action, EditorView, NUMBER_EMOJI, buildingLevels } from '../util/types';
 
 const state = useEditorState();
 
@@ -36,18 +36,12 @@ type ToolbarAction = {
 }
 
 const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
-  const levels = new Set();
-
   if (!state.config) {
     return {} as {[key: string]: ToolbarAction[]};
   }
 
-  for (const e of Object.values(state.config.map?.elements || {})) {
-      if (e.type === 'way' && typeof(e.tags?.['indoor:level']) !== 'undefined') {
-        levels.add(e.tags['indoor:level']);
-      }
-  }
-  
+  const levels = buildingLevels(Object.values(state.config.map?.elements || {}));
+
   return {
     'View': [{
       hotkey: 'b',
@@ -68,10 +62,10 @@ const actions = computed<{[key: string]: ToolbarAction[]}>(() => {
       class: props.view === 'map' ? 'active' : '',
       emit: { type: 'view', action: 'map' }
     }],
-    'Building Levels': [...levels].sort().map((level, i, all) => ({
-      class: `${props.level === Number(level) ? 'active' : ''} ${Number(level) < 0 ? 'negative' : ''}`,
+    'Building Levels': levels.map((level, i, all) => ({
+      class: `${props.level === level ? 'active' : ''} ${level < 0 ? 'negative' : ''}`,
       style: `filter: hue-rotate(${150 - Math.round(i * (360/all.length))}deg);`,
-      icon: NUMBER_EMOJI[Math.abs(Number(level))],
+      icon: NUMBER_EMOJI[Math.abs(level)],
       label: `Level ${level} (⎇ Alt + ${i + 1} to move current scene to this level)`,
       hotkey: String(i + 1),
       emit: { type: 'level', action: String(level) }

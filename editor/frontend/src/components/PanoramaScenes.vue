@@ -28,7 +28,7 @@ import { graphlib, layout } from '@dagrejs/dagre';
 import { computed } from 'vue';
 
 import { useEditorState } from '../plugins/store';
-import { EditorView, Action, NUMBER_EMOJI } from '../util/types';
+import { EditorView, Action, NUMBER_EMOJI, buildingLevels } from '../util/types';
 
 const state = useEditorState();
 
@@ -47,10 +47,7 @@ const levels = computed<{level: number, icon: string, class: string, style: stri
     return [];
   }
 
-  return [...new Set(
-    Object.values(state.config.map?.elements || {})
-      .map(e => e.type === 'way' && typeof(e.tags?.['indoor:level']) !== 'undefined' ? Number(e.tags['indoor:level']) : undefined)
-  )].filter(e => typeof e === 'number').sort().map((l, i, all) => ({
+  return buildingLevels(Object.values(state.config.map?.elements || {})).map((l, i, all) => ({
     level: l,
     icon: NUMBER_EMOJI[Math.abs(l)],
     class: l < 0 ? 'negative' : '',
