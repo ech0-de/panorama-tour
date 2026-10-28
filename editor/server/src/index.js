@@ -5,7 +5,6 @@ import path from 'node:path';
 import express from 'express';
 import ExifParser from 'exif-parser';
 import jsonpatch from 'fast-json-patch';
-import asyncHandler from 'express-async-handler';
 
 import { WebSocketServer } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
@@ -87,20 +86,22 @@ function persistTour(tour) {
 const app = express();
 app.use(express.static(STATIC_DIR));
 
-app.get('/tours/:tour([a-fA-F0-9]{40})/:file([a-fA-F0-9]{40}).jpg', asyncHandler(async (req, res) => {
-  if (req.get('if-none-match') === req.params.file) {
+// express 5 no longer supports inline regular expressions in route parameters
+app.get(/^\/tours\/([a-fA-F0-9]{40})\/([a-fA-F0-9]{40})\.jpg$/, async (req, res) => {
+  const [tour, file] = [req.params[0], req.params[1]];
+  if (req.get('if-none-match') === file) {
     return res.status(304).end();
   }
   
   try {
-    const file = await fs.readFile(path.join(DATA_DIR, req.params.tour, `${req.params.file}.jpg`));
+    const image = await fs.readFile(path.join(DATA_DIR, tour, `${file}.jpg`));
     res.set('content-type', 'image/jpeg');
-    res.set('etag', req.params.file);
-    res.end(file);
+    res.set('etag', file);
+    res.end(image);
   } catch {
     res.status(404).end();
   }
-}));
+});
 
 // multires tiles: /tours/<tour dir>/<image hash>/<level or "fallback">/<face><row>_<col>.<format>
 app.get(/^\/tours\/([a-f0-9]{40})\/([a-f0-9]{40})\/([0-9]+|fallback)\/([fbudlr](?:[0-9]+_[0-9]+)?\.(?:jpg|webp))$/, (req, res) => {
@@ -119,7 +120,7 @@ function queueTiles(input, outDir) {
   return job;
 }
 
-app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), asyncHandler(async (req, res) => {
+app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), async (req, res) => {
   if (!tours.has(req.params.tour)) {
     return res.status(404).json({ ok: false, reason: 'tour does not exist' });
   }
@@ -207,10 +208,10 @@ app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), as
   }
 
   return res.status(201).json({ ok: true, scene: hash });
-}));
+});
 
 // serve the editor for client-side routes like /:tour/:level/:scene/:view
-app.get('*', (req, res, next) => {
+app.get('/{*path}', (req, res, next) => {
   if (!req.accepts('html')) {
     return next();
   }
