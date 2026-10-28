@@ -63,11 +63,12 @@ export default async function doExport(title: string, config: Config, htmlOnly: 
     scene.relations = scene.relations.filter(e => !hiddenScenes.has(e));
     levelsWithScenes.add(scene.level);
 
+    const fetchPath = scene.panorama;
     const file = `tour/${scene.panorama.split('/').pop()}`;
     scene.panorama = file;
 
     if (zip) {
-      const res = await fetch(scene.panorama)
+      const res = await fetch(fetchPath);
       const blob = await res.arrayBuffer();
       zip.file(`${prefix}/${file}`, blob);
       await sleep(250 * Math.random());
