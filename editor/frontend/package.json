@@ -31,13 +31,13 @@
     "unique-names-generator": "^4.7.1",
     "v-network-graph": "^0.10.0",
     "vue": "^3.4.35",
-    "vue-router": "^4.4.3"
+    "vue-router": "^5.4.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.1.2",
+    "@vitejs/plugin-vue": "^6.0.10",
     "typescript": "~5.9.3",
-    "vite": "^6.4.5",
-    "vue-tsc": "^2.0.29"
+    "vite": "^8.3.5",
+    "vue-tsc": "^3.3.13"
   },
   "overrides": {
     "monaco-editor": {
