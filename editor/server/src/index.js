@@ -98,7 +98,7 @@ app.get('/tours/:tour([a-fA-F0-9]{40})/:file([a-fA-F0-9]{40}).jpg', asyncHandler
   }
 }));
 
-app.post('/tours/:tour', express.raw({ limit: '10mb', type: 'image/jpeg' }), asyncHandler(async (req, res) => {
+app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), asyncHandler(async (req, res) => {
   if (!tours.has(req.params.tour)) {
     return res.status(404).json({ ok: false, reason: 'tour does not exist' });
   }
