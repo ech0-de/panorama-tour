@@ -245,7 +245,7 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
   viewer.on('animatefinished', updateView);
   viewer.on('touchend', updateView);
   viewer.on('mouseup', updateView);
-  viewer.on('load', () => {
+  const onLoad = () => {
     activeScene = loadingScene;
     storage(() => localStorage.setItem(storageKey, activeScene));
 
@@ -260,7 +260,16 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
     config.scenes[activeScene]?.marker?.setIcon?.(ACTIVE_ICON);
 
     updateView();
-  });
+  };
+  viewer.on('load', onLoad);
+
+  // multires scenes don't wait for an image, so pannellum already fires the first load event
+  // while creating the viewer, before the listener above exists; handle it once the UI is set up
+  const catchUpOnLoad = () => {
+    if (viewer.isLoaded() && !activeScene) {
+      onLoad();
+    }
+  };
 
   const switchScene = (target: string) => {
     if (target !== activeScene) {
@@ -274,7 +283,7 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
   const pnlmUI = element.querySelector('.pnlm-ui');
 
   if (!pnlmUI) {
-    return;
+    return catchUpOnLoad();
   }
 
   // leaflet-based minimap
@@ -362,4 +371,6 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
       L.polygon(p, { color: 'red' }).addTo(mapObj);
     }
   }
+
+  catchUpOnLoad();
 };
