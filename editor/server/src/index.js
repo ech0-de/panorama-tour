@@ -108,7 +108,7 @@ app.post('/tours/:tour', express.raw({ limit: '10mb', type: 'image/jpeg' }), asy
 
   const tour = tours.get(req.params.tour);
   if (tour.state?.scenes?.[hash]) {
-    return res.status(204).json({ ok: true, scene: hash });
+    return res.status(200).json({ ok: true, scene: hash });
   }
 
   const metadata = ExifParser.create(req.body).parse();
