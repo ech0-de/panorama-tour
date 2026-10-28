@@ -129,7 +129,7 @@ app.post('/tours/:tour', express.raw({ limit: '10mb', type: 'image/jpeg' }), asy
   }
 
   tour.state.scenes[hash] = {
-    title: `${metadata.tags?.ImageDescription || ''}`.trim(),
+    title: path.parse(`${req.query?.name || ''}`).name.trim() || `${metadata.tags?.ImageDescription || ''}`.trim(),
     lat: metadata.tags?.GPSLatitude || center[1] || 0,
     lon: metadata.tags?.GPSLongitude || center[0] || 0,
     northOffset: metadata.tags?.GPSImgDirection || 0,

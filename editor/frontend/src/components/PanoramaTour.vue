@@ -136,7 +136,7 @@ async function uploadFiles(files: File[]) {
               return reject();
             }
 
-            const res = await fetch(`/tours/${tour}`, {
+            const res = await fetch(`/tours/${tour}?name=${encodeURIComponent(file.name)}`, {
               method: 'POST',
               headers: { 'content-type': file.type },
               body: evt.target.result
