@@ -23,7 +23,7 @@
     "leaflet": "^1.9.4",
     "monaco-editor": "^0.50.0",
     "object-hash": "^3.0.0",
-    "pannellum": "^2.5.6",
+    "pannellum": "^2.5.7",
     "panorama-tour": "file:../../",
     "pinia": "^2.2.2",
     "quaternion": "^1.5.1",
