@@ -144,7 +144,7 @@ app.post('/tours/:tour', express.raw({ limit: '10mb', type: 'image/jpeg' }), asy
   const update = JSON.stringify({ type: 'update', data: patch });
   await persistTour(tour);
 
-  for (const client of tour.clients) {
+  for (const client of tour.clients.keys()) {
     client.send(update);
   }
 
