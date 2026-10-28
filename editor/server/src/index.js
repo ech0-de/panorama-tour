@@ -84,8 +84,8 @@ const app = express();
 app.use(express.static(STATIC_DIR));
 
 app.get('/tours/:tour([a-fA-F0-9]{40})/:file([a-fA-F0-9]{40}).jpg', asyncHandler(async (req, res) => {
-  if (req.header['if-none-match'] === req.params.file) {
-    res.status(304).end();
+  if (req.get('if-none-match') === req.params.file) {
+    return res.status(304).end();
   }
   
   try {
