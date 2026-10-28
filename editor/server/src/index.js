@@ -11,7 +11,9 @@ import { WebSocketServer } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 import * as turf from '@turf/turf';
 
-import { generateTiles } from './tiles.js';
+import sharp from 'sharp';
+
+import { generateTiles, InvalidImageError } from './tiles.js';
 
 const PORT = process.env.PORT !== undefined ? parseInt(process.env.PORT) : 3030;
 const DATA_DIR = process.env.DATA_DIR !== undefined ? process.env.DATA_DIR : 'data';
@@ -122,6 +124,11 @@ app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), as
     return res.status(404).json({ ok: false, reason: 'tour does not exist' });
   }
 
+  // express.raw() only fills the body for image/jpeg requests
+  if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+    return res.status(415).json({ ok: false, reason: 'expected a JPEG image' });
+  }
+
   const dir = crypto.createHash('sha1').update(req.params.tour).digest('hex');
   const hash = crypto.createHash('sha1').update(req.body).digest('hex');
 
@@ -130,11 +137,33 @@ app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), as
     return res.status(200).json({ ok: true, scene: hash });
   }
 
-  const metadata = ExifParser.create(req.body).parse();
+  // check the actual file content, as the content type is only what the client claims
+  const format = await sharp(req.body).metadata().then(m => m.format, () => null);
+  if (format !== 'jpeg') {
+    return res.status(422).json({ ok: false, reason: format ? `not a JPEG image, but ${format}` : 'not a valid image' });
+  }
+
+  // broken EXIF data doesn't make the image unusable, it just lacks the metadata
+  let metadata = { tags: {} };
+  try {
+    metadata = ExifParser.create(req.body).parse();
+  } catch (err) {
+    console.warn(`[${req.params.tour}] ignoring broken EXIF data in ${hash}: ${err.message}`);
+  }
+
+  // generate the tiles first, which also fully decodes the image, so nothing is stored for broken images
+  let multiRes;
+  try {
+    multiRes = await queueTiles(req.body, path.join(DATA_DIR, dir, hash));
+  } catch (err) {
+    if (err instanceof InvalidImageError) {
+      return res.status(422).json({ ok: false, reason: err.message });
+    }
+    throw err;
+  }
 
   await fs.mkdir(path.join(DATA_DIR, dir), { recursive: true });
   await fs.writeFile(path.join(DATA_DIR, dir, `${hash}.jpg`), req.body);
-  const multiRes = await queueTiles(req.body, path.join(DATA_DIR, dir, hash));
 
   // the same image might have been added by someone else while the tiles were generated
   if (tour.state?.scenes?.[hash]) {
@@ -187,6 +216,16 @@ app.get('*', (req, res, next) => {
   }
 
   res.sendFile(path.resolve(STATIC_DIR, 'index.html'), (err) => err && next());
+});
+
+// reply with JSON instead of express' HTML error page, which includes stack traces
+// (express only treats handlers with four parameters as error handlers, so next has to stay)
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) {
+    console.error(err);
+  }
+  res.status(status).json({ ok: false, reason: err.expose ? err.message : 'internal server error' });
 });
 
 const server = app.listen(PORT, () => console.log(`Server started: http://localhost:${PORT}`));

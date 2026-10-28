@@ -23,6 +23,9 @@ const FACES = {
   r: [[1, 1, -1], [1, 1, 1], [1, -1, -1]]
 };
 
+// thrown if the input is not a decodable image, as opposed to errors on the server side
+export class InvalidImageError extends Error {}
+
 const rawInfo = ({ width, height, channels }) => ({ width, height, channels });
 
 function encode(image, format) {
@@ -81,11 +84,17 @@ function renderFace(pano, width, height, corners, size) {
  * is not a full 360°x180° panorama, in which case it stays a plain equirectangular scene.
  */
 export async function generateTiles(input, outDir) {
-  const { data, info } = await sharp(input, { limitInputPixels: false })
-    .removeAlpha()
-    .toColorspace('srgb')
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+  let decoded;
+  try {
+    decoded = await sharp(input, { limitInputPixels: false })
+      .removeAlpha()
+      .toColorspace('srgb')
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+  } catch (err) {
+    throw new InvalidImageError(`image could not be decoded: ${err.message.replace(/^Vips\w*: /, '')}`);
+  }
+  const { data, info } = decoded;
 
   if (Math.abs(info.width / info.height - 2) > 0.01) {
     return null;
