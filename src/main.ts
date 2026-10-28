@@ -21,10 +21,24 @@ export type BuildingWayType = {
 const CAMERA_ICON = L.divIcon({ html: '📷️', iconSize: [20, 20], className: 'pt-minimap-icon' });
 const ACTIVE_ICON = L.divIcon({ html: '👁️', iconSize: [20, 20], className: 'pt-minimap-icon' });
 
+// smallest lossy WebP image, used to find out whether the browser can decode WebP
+const WEBP_PROBE = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
+
+function webpSupported(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img.width === 1);
+    img.onerror = () => resolve(false);
+    img.src = WEBP_PROBE;
+  });
+}
+
 export type Config = {
   scenes: {[type: string]: {
     relations: string[]
-    panorama: string,
+    panorama?: string,
+    // multires tile set, with the tile formats that are available
+    multiRes?: NonNullable<Pannellum.MultiresOptions['multiRes']> & { formats?: string[] },
     intermediate?: boolean,
     marker?: L.Marker,
     level: number,
@@ -98,8 +112,21 @@ export default async function panoramaTour(element: HTMLElement, config: Config)
   let loadingScene: string = config.default.firstScene;
   let activeLevel: null|number = null;
 
+  const webp = await webpSupported();
+
   for (const [id, scene] of Object.entries(config.scenes)) {
     scene.title = scene.title || id;
+
+    if (scene.multiRes) {
+      // use the most efficient tile format the browser supports
+      const { formats, ...multiRes } = scene.multiRes;
+      const available = formats || [multiRes.extension];
+      scene.type = 'multires';
+      scene.multiRes = {
+        ...multiRes,
+        extension: webp && available.includes('webp') ? 'webp' : (available.find(f => f !== 'webp') || multiRes.extension)
+      };
+    }
 
     if (Array.isArray(scene.relations)) {
       scene.hotSpots = [];

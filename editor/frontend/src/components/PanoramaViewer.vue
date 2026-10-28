@@ -14,6 +14,7 @@ const container = ref<null | HTMLDivElement>(null);
 
 import { useEditorState } from '../plugins/store';
 import { Action } from '../util/types';
+import { multiResOptions, webpSupported } from '../util/tiles';
 
 const state = useEditorState();
 
@@ -28,7 +29,9 @@ const emit = defineEmits<{
 let viewer = null as (Pannellum.Viewer|null);
 let view = { pitch: 0, yaw: 0, hfov: 0 };
 
-onMounted(() => {
+onMounted(async () => {
+  // decide on the tile format once, before the first scene is added
+  const webp = await webpSupported;
   if (!container.value) {
     return;
   }
@@ -102,9 +105,10 @@ onMounted(() => {
         }
 
         const sceneConfig = {
-          type: scene.type,
+          type: scene.multiRes ? 'multires' : scene.type,
           title: scene.title,
           panorama: scene.panorama,
+          multiRes: scene.multiRes ? multiResOptions(toRaw(scene.multiRes), webp) : undefined,
           northOffset: (scene.northOffset || 0),
           horizonRoll: horizonRoll,
           horizonPitch: horizonPitch,
@@ -181,6 +185,7 @@ onMounted(() => {
           (viewer.getConfig() as any).hotSpots === previous.hotSpots &&
           previous.panorama === sceneConfig.panorama &&
           previous.type === sceneConfig.type &&
+          JSON.stringify(previous.multiRes) === JSON.stringify(sceneConfig.multiRes) &&
           previous.title === sceneConfig.title
         ) {
           // same image, only angles or hot spots changed: update the current scene in place

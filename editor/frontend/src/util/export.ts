@@ -5,8 +5,25 @@ import panoramaTourJS from 'panorama-tour/dist/panorama-tour.min.js?raw';
 import panoramaTourCSS from 'panorama-tour/dist/panorama-tour.min.css?raw';
 
 import { BuildingWayType, Config } from './types';
+import { listTiles } from './tiles';
 
 const sleep = (t: number) => new Promise((resolve) => setTimeout(resolve, t));
+
+// fetches [url, zip path] pairs into the zip, a few requests at a time
+async function fetchInto(zip: JSZip, files: [string, string][], concurrency = 6) {
+  const queue = [...files];
+  await Promise.all(Array(concurrency).fill(null).map(async () => {
+    for (let next = queue.shift(); next; next = queue.shift()) {
+      const [url, file] = next;
+      const res = await fetch(url);
+      if (res.ok) {
+        zip.file(file, await res.arrayBuffer());
+      } else {
+        console.warn(`export: skipping ${url} (${res.status})`);
+      }
+    }
+  }));
+}
 
 const encoder = new TextEncoder();
 
@@ -70,6 +87,20 @@ export default async function doExport(title: string, config: Config, htmlOnly: 
 
   for (const scene of Object.values(clonedConfig.scenes)) {
     scene.relations = scene.relations.filter(e => !hiddenScenes.has(e));
+
+    if (scene.multiRes) {
+      // tiled scenes only need their tiles, in all formats, so each visitor's browser can pick one
+      const fetchBase = scene.multiRes.basePath;
+      const dir = `tour/${fetchBase.split('/').pop()}`;
+      scene.multiRes.basePath = dir;
+      delete (scene as Partial<typeof scene>).panorama;
+
+      if (zip) {
+        const files = (scene.multiRes.formats || [scene.multiRes.extension]).flatMap(format => listTiles(scene.multiRes!, format));
+        await fetchInto(zip, files.map(file => [`${fetchBase}/${file}`, `${prefix}/${dir}/${file}`]));
+      }
+      continue;
+    }
 
     const fetchPath = scene.panorama;
     const file = `tour/${scene.panorama.split('/').pop()}`;
