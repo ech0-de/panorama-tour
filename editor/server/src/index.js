@@ -170,7 +170,7 @@ wss.on('connection', (ws, req) => {
       tour = {
         name: name,
         clients: new Map(),
-        state: DEFAULT_CONFIG
+        state: structuredClone(DEFAULT_CONFIG)
       };
 
       tours.set(name, tour);
