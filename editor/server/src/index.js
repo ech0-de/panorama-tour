@@ -151,6 +151,15 @@ app.post('/tours/:tour', express.raw({ limit: '10mb', type: 'image/jpeg' }), asy
   return res.status(201).json({ ok: true, scene: hash });
 }));
 
+// serve the editor for client-side routes like /:tour/:level/:scene/:view
+app.get('*', (req, res, next) => {
+  if (!req.accepts('html')) {
+    return next();
+  }
+
+  res.sendFile(path.resolve(STATIC_DIR, 'index.html'), (err) => err && next());
+});
+
 const server = app.listen(PORT, () => console.log(`Server started: http://localhost:${PORT}`));
 const wss = new WebSocketServer({ server: server });
 
