@@ -11,6 +11,8 @@ import { WebSocketServer } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 import * as turf from '@turf/turf';
 
+import { generateTiles } from './tiles.js';
+
 const PORT = process.env.PORT !== undefined ? parseInt(process.env.PORT) : 3030;
 const DATA_DIR = process.env.DATA_DIR !== undefined ? process.env.DATA_DIR : 'data';
 const STATIC_DIR = process.env.STATIC_DIR !== undefined ? process.env.STATIC_DIR : '../../';
@@ -98,6 +100,23 @@ app.get('/tours/:tour([a-fA-F0-9]{40})/:file([a-fA-F0-9]{40}).jpg', asyncHandler
   }
 }));
 
+// multires tiles: /tours/<tour dir>/<image hash>/<level or "fallback">/<face><row>_<col>.<format>
+app.get(/^\/tours\/([a-f0-9]{40})\/([a-f0-9]{40})\/([0-9]+|fallback)\/([fbudlr](?:[0-9]+_[0-9]+)?\.(?:jpg|webp))$/, (req, res) => {
+  res.sendFile(path.resolve(DATA_DIR, ...Object.values(req.params).slice(0, 4)), { maxAge: '7d' }, (err) => {
+    if (err) {
+      res.status(404).end();
+    }
+  });
+});
+
+// tile generation needs a lot of memory and CPU, so only process one image at a time
+let tileQueue = Promise.resolve();
+function queueTiles(input, outDir) {
+  const job = tileQueue.then(() => generateTiles(input, outDir));
+  tileQueue = job.catch(() => {});
+  return job;
+}
+
 app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), asyncHandler(async (req, res) => {
   if (!tours.has(req.params.tour)) {
     return res.status(404).json({ ok: false, reason: 'tour does not exist' });
@@ -112,6 +131,16 @@ app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), as
   }
 
   const metadata = ExifParser.create(req.body).parse();
+
+  await fs.mkdir(path.join(DATA_DIR, dir), { recursive: true });
+  await fs.writeFile(path.join(DATA_DIR, dir, `${hash}.jpg`), req.body);
+  const multiRes = await queueTiles(req.body, path.join(DATA_DIR, dir, hash));
+
+  // the same image might have been added by someone else while the tiles were generated
+  if (tour.state?.scenes?.[hash]) {
+    return res.status(200).json({ ok: true, scene: hash });
+  }
+
   const center = turf.getCoord(
     turf.center(
       turf.points([
@@ -136,12 +165,11 @@ app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), as
     northOffset: metadata.tags?.GPSImgDirection || 0,
     panorama: `/tours/${dir}/${hash}.jpg`,
     level: Number(req.query?.level) || 0,
-    relations: []
+    relations: [],
+    ...(multiRes ? { multiRes: { ...multiRes, basePath: `/tours/${dir}/${hash}` } } : {})
   };
 
   const patch = jsonpatch.compare(pre, tour.state);
-  await fs.mkdir(path.join(DATA_DIR, dir), { recursive: true });
-  await fs.writeFile(path.join(DATA_DIR, dir, `${hash}.jpg`), req.body);
   const update = JSON.stringify({ type: 'update', data: patch });
   await persistTour(tour);
 
