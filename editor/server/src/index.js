@@ -118,7 +118,8 @@ app.post('/tours/:tour', express.raw({ limit: '100mb', type: 'image/jpeg' }), as
         tour.state?.map?.center,
         ...tour.state?.map?.maxBounds,
         ...Object.values(tour.state?.scenes || {}).map(e => [e.lat, e.lon])
-      ].filter(e => Array.isArray(e) && e.length === 2).map(e => e.reverse()))
+      // turf expects [lon, lat]; swap into new arrays, as reverse() would flip the tour's own map.center and maxBounds
+      ].filter(e => Array.isArray(e) && e.length === 2).map(([lat, lon]) => [lon, lat]))
     )
   );
 
