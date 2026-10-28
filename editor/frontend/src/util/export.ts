@@ -21,13 +21,31 @@ export default async function doExport(title: string, config: Config, htmlOnly: 
   const prefix = `pt-${title}`.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/--*/g, '-');
 
   const zip = !htmlOnly ? new JSZip() : null;
-  const levelsWithScenes = new Set();
   const clonedConfig = structuredClone(config);
 
-  levelsWithScenes.add(0);
-  levelsWithScenes.add(1);
+  const hiddenScenes = new Set(
+    Object.keys(clonedConfig.scenes)
+      .filter(e => config.scenes[e]?.hidden === true)
+  );
 
-  const elements = clonedConfig.map.elements.filter(e => e.type === 'way' && levelsWithScenes.has(e.tags['indoor:level'])) as BuildingWayType[];
+  for (const id of hiddenScenes) {
+    delete clonedConfig.scenes[id];
+  }
+
+  // only export floor plans of levels that still contain scenes, compared as strings,
+  // as indoor:level tags may be numbers or strings depending on the map source
+  const levelsWithScenes = new Set(Object.values(clonedConfig.scenes).map(scene => String(scene.level || 0)));
+
+  const elements = clonedConfig.map.elements.filter(e => {
+    if (e.type !== 'way') {
+      return false;
+    }
+
+    const level = e.tags['indoor:level'];
+    // the tour treats ways without a numeric level as building outline, shown on every level
+    const isBuilding = (level !== undefined || e.tags.building !== undefined) && /.*[^0-9\-].*/.test(level);
+    return isBuilding || levelsWithScenes.has(String(level));
+  }) as BuildingWayType[];
   const requiredNodes = new Set(elements.flatMap(e => e.nodes));
 
   clonedConfig.map.elements = [
@@ -50,18 +68,8 @@ export default async function doExport(title: string, config: Config, htmlOnly: 
     ));
   }
 
-  const hiddenScenes = new Set(
-    Object.keys(clonedConfig.scenes)
-      .filter(e => config.scenes[e]?.hidden === true)
-  );
-
-  for (const id of hiddenScenes) {
-    delete clonedConfig.scenes[id];
-  }
-
   for (const scene of Object.values(clonedConfig.scenes)) {
     scene.relations = scene.relations.filter(e => !hiddenScenes.has(e));
-    levelsWithScenes.add(scene.level);
 
     const fetchPath = scene.panorama;
     const file = `tour/${scene.panorama.split('/').pop()}`;
