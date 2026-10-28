@@ -556,7 +556,7 @@ function handleAction(action: Action) {
   }
   #upload li {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 6em auto;
+    grid-template-columns: minmax(8em, 1fr) 6em minmax(0, auto);
     align-items: center;
     gap: .5em;
     padding: .15em 0;
@@ -573,6 +573,8 @@ function handleAction(action: Action) {
     grid-column: 3;
     text-align: right;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   #upload li.queued, #upload li.skipped {
     opacity: .6;
