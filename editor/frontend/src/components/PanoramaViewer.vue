@@ -48,7 +48,8 @@ onMounted(() => {
     showControls: false,
     keyboardZoom: false,
     disableKeyboardCtrl: true,
-    autoLoad: true,
+    // no autoLoad: combined with loadScene() before the first render, pannellum
+    // would load the panorama twice and crash once the slower request finishes
     hfov: hfov,
   }, scenes: {} } as any);
 
