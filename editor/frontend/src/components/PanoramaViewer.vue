@@ -43,6 +43,7 @@ onMounted(() => {
   }
 
   const scenes = {} as {[key: string]: string};
+  const sceneConfigs = {} as {[key: string]: any};
   viewer = pannellum.viewer(container.value, { default: {
     sceneFadeDuration: 1000,
     showControls: false,
@@ -100,7 +101,7 @@ onMounted(() => {
             .forEach(e => sceneLevels.add(e as number));
         }
 
-        viewer.addScene(id, {
+        const sceneConfig = {
           type: scene.type,
           title: scene.title,
           panorama: scene.panorama,
@@ -169,10 +170,41 @@ onMounted(() => {
                 }
               }];
             })
-          ]
-        } as any);
+          ].map((hs, i) => ({ ...hs, id: String(i) }))
+        };
 
         scenes[id] = h;
+
+        const previous = sceneConfigs[id];
+        if (
+          previous && viewer.getScene() === id && viewer.isLoaded() &&
+          (viewer.getConfig() as any).hotSpots === previous.hotSpots &&
+          previous.panorama === sceneConfig.panorama &&
+          previous.type === sceneConfig.type &&
+          previous.title === sceneConfig.title
+        ) {
+          // same image, only angles or hot spots changed: update the current scene in place
+          // instead of reloading the whole panorama
+          for (const hs of [...previous.hotSpots]) {
+            viewer.removeHotSpot(hs.id);
+          }
+
+          // pannellum shares the hotSpots array between the stored scene and the live config,
+          // so keep that array and add the new hot spots through the API
+          Object.assign(previous, { ...sceneConfig, hotSpots: previous.hotSpots });
+          sceneConfig.hotSpots.forEach((hs) => viewer?.addHotSpot(hs as any));
+
+          // set roll directly, as setHorizonRoll() would clamp it to ±90° unlike loadScene();
+          // setHorizonPitch() then applies both to the renderer and redraws
+          const live = viewer.getConfig() as any;
+          live.northOffset = sceneConfig.northOffset;
+          live.horizonRoll = sceneConfig.horizonRoll;
+          viewer.setHorizonPitch(sceneConfig.horizonPitch);
+          continue;
+        }
+
+        sceneConfigs[id] = sceneConfig;
+        viewer.addScene(id, sceneConfig as any);
 
         if (id === props.scene) {
           if (view?.pitch && view?.hfov) {
