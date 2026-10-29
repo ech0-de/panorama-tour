@@ -17,6 +17,8 @@
         <text font-family="emoji" :font-size="22 * scale" fill="#ffffff" text-anchor="middle" dominant-baseline="central" style="pointer-events: none" :style="`${nodeId === state.config?.default.scene ? '' : nodes[nodeId].style}${nodes[nodeId].hidden ? 'opacity: .5' : ''}`">
           {{ nodes[nodeId].icon }}
         </text>
+        <!-- there are no emojis for negative numbers, and svg text has no ::before like the legend and toolbar use -->
+        <text v-if="nodes[nodeId].negative" :x="-5.5 * scale" :y="-1 * scale" font-weight="bolder" :font-size="16 * scale" fill="#ffffff" text-anchor="middle" dominant-baseline="central" style="pointer-events: none" :style="`${nodes[nodeId].style}${nodes[nodeId].hidden ? 'opacity: .5' : ''}`">-</text>
       </template>
     </v-network-graph>
   </div>
@@ -71,6 +73,7 @@ const nodes = computed(() => {
       icon: id === state.config?.default.scene
         ? '✨'
         : (scene?.intermediate ? '🪜' : (levelMap[scene.level]?.icon || '')),
+      negative: id !== state.config?.default.scene && !scene?.intermediate && scene.level < 0 && Boolean(levelMap[scene.level]),
       linked: currentRelations.has(id),
       hidden: scene.hidden || false,
     }])
@@ -242,18 +245,5 @@ const eventHandlers: EventHandlers = {
   background-color: rgba(0, 0, 0, 0.85);
   transition: 0.5s;
   z-index: 999;
-}
-
-.pt-linking text.negative {
-  position: relative;
-}
-
-.pt-linking text.negative::before {
-  content: "-";
-  position: absolute;
-  font-weight: bolder;
-  left: 4px;
-  top: 2px;
-  font-size: 75%;
 }
 </style>
